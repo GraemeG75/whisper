@@ -11,7 +11,6 @@ from typing import List, Tuple
 import torch
 import whisper
 
-
 warnings.filterwarnings("ignore", message="FP16 is not supported on CPU*")
 
 DEFAULT_DISPATCH_PROMPT = (
@@ -19,10 +18,8 @@ DEFAULT_DISPATCH_PROMPT = (
     "medical and fire call types, and number sequences accurate. Prefer literal transcription over paraphrase."
 )
 
-
 def normalize_segment_text(text: str) -> str:
     return " ".join(text.lower().strip().split())
-
 
 def should_skip_segment(segment: dict) -> bool:
     text = segment.get("text", "").strip()
@@ -38,25 +35,33 @@ def should_skip_segment(segment: dict) -> bool:
         return True
     return False
 
-
 def is_likely_hallucination(text: str, avg_logprob: float, no_speech_prob: float) -> bool:
     """Check if a segment is likely a hallucinated common phrase."""
     norm = normalize_segment_text(text)
-    common_hallucinations = {
+    
+    # Very short common false positives - skip regardless of confidence
+    very_common_hallucinations = {
         "thank you",
-        "thank you all",
-        "thank you very much",
         "okay",
         "roger",
         "yes",
     }
+    if norm in very_common_hallucinations and len(norm.split()) <= 2:
+        return True
     
-    # If it's a very common phrase AND low-to-medium confidence, skip it.
-    if norm in common_hallucinations:
+    # Longer hallucinations - only skip if low confidence
+    prompt_hallucinations = {
+        "thank you all",
+        "thank you very much",
+        "keep unit ids addresses street names cross streets medical and fire calls accurate",
+        "keep unit ids addresses street names cross streets medical and fire call types and number sequences accurate prefer literal transcription over paraphrase",
+        "public safety and radio dispatch audio keep unit ids addresses street names cross streets medical and fire call types and number sequences accurate prefer literal transcription over paraphrase",
+    }
+    if norm in prompt_hallucinations:
         if avg_logprob < -0.7 or no_speech_prob > 0.35:
             return True
+    
     return False
-
 
 def detect_repeating_loop(recent_texts: List[str], window_size: int = 10) -> bool:
     """Detect if the last N segments form a repeating or alternating loop.
@@ -88,9 +93,8 @@ def detect_repeating_loop(recent_texts: List[str], window_size: int = 10) -> boo
     
     return False
 
-
 def normalize_and_amplify_audio(input_file: Path, temp_dir: Path) -> Path:
-    """Apply basic normalization and amplification to audio."""
+    """Apply basic normalization, noise reduction, and amplification to audio."""
     temp_dir.mkdir(parents=True, exist_ok=True)
     output_file = temp_dir / f"{input_file.stem}_normalized.wav"
     ffmpeg_command = [
@@ -103,17 +107,47 @@ def normalize_and_amplify_audio(input_file: Path, temp_dir: Path) -> Path:
         "-ar",
         "16000",
         "-af",
-        "loudnorm=I=-20:TP=-3:LRA=4,volume=1.3",
+        "highpass=f=100,anlmdn=s=0.003:p=0.002,loudnorm=I=-20:TP=-3:LRA=4,volume=1.6",
         str(output_file),
     ]
-    result = subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
+        print(f"    Warning: Audio normalization failed: {result.stderr[-500:]}")
         return input_file
     return output_file
 
+def extract_audio_from_mp4(input_file: Path, temp_dir: Path) -> Path:
+    """Extract audio from MP4 file and convert to mono WAV format.
+    
+    This handles MP4 files separately to avoid video stream issues.
+    Includes noise reduction during extraction for better quality.
+    """
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    output_file = temp_dir / f"{input_file.stem}_extracted.wav"
+    ffmpeg_command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(input_file),
+        "-vn",  # No video
+        "-acodec",
+        "pcm_s16le",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-af",
+        "highpass=f=80,anlmdn=s=0.004:p=0.0015,volume=1.5",
+        str(output_file),
+    ]
+    result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode != 0:
+        print(f"    Warning: MP4 audio extraction failed: {result.stderr[-500:]}")
+        return input_file
+    return output_file
 
 def preprocess_audio_ffmpeg(input_file: Path, temp_dir: Path) -> Path:
-    """Apply heavy preprocessing: noise reduction + bandpass + amplification."""
+    """Apply heavy preprocessing: aggressive noise reduction + bandpass + amplification."""
     temp_dir.mkdir(parents=True, exist_ok=True)
     output_file = temp_dir / f"{input_file.stem}_clean.wav"
     ffmpeg_command = [
@@ -126,14 +160,14 @@ def preprocess_audio_ffmpeg(input_file: Path, temp_dir: Path) -> Path:
         "-ar",
         "16000",
         "-af",
-        "highpass=f=120,lowpass=f=3500,afftdn,loudnorm=I=-20:TP=-3:LRA=4,volume=1.3",
+        "highpass=f=120,lowpass=f=3500,anlmdn=s=0.005:p=0.001,afftdn,loudnorm=I=-20:TP=-3:LRA=4,volume=1.8",
         str(output_file),
     ]
-    result = subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
+        print(f"    Warning: Heavy preprocessing failed: {result.stderr[-500:]}")
         return input_file
     return output_file
-
 
 def detect_silences(audio_file: Path, silence_db: float, min_silence_sec: float) -> List[Tuple[float, float]]:
     command = [
@@ -160,7 +194,6 @@ def detect_silences(audio_file: Path, silence_db: float, min_silence_sec: float)
             silences.append((start, ends[i]))
     return silences
 
-
 def get_audio_duration_seconds(audio_file: Path) -> float:
     command = [
         "ffprobe",
@@ -179,7 +212,6 @@ def get_audio_duration_seconds(audio_file: Path) -> float:
         return float(result.stdout.strip())
     except ValueError:
         return 0.0
-
 
 def build_chunk_ranges(
     duration: float,
@@ -217,7 +249,6 @@ def build_chunk_ranges(
 
     return ranges
 
-
 def export_audio_chunk(source_audio: Path, chunk_file: Path, start_sec: float, end_sec: float) -> bool:
     command = [
         "ffmpeg",
@@ -236,7 +267,6 @@ def export_audio_chunk(source_audio: Path, chunk_file: Path, start_sec: float, e
     ]
     result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return result.returncode == 0
-
 
 def chunk_audio_by_silence(
     source_audio: Path,
@@ -264,7 +294,6 @@ def chunk_audio_by_silence(
     if not chunk_paths:
         return [(source_audio, 0.0)]
     return chunk_paths
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Batch transcribe audio files with Whisper.")
@@ -302,10 +331,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Write a TSV and JSONL file with timestamps and confidence per segment",
     )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Enable fast mode: skip preprocessing, enable silence-based chunking, reduce beam search",
+    )
     return parser
 
-
-def transcribe_file(model, audio_path: Path, language: str, prompt: str) -> dict:
+def transcribe_file(model, audio_path: Path, language: str, prompt: str, beam_size: int = 5, best_of: int = 5) -> dict:
     return model.transcribe(
         str(audio_path),
         language=language,
@@ -313,8 +346,8 @@ def transcribe_file(model, audio_path: Path, language: str, prompt: str) -> dict
         word_timestamps=False,
         initial_prompt=prompt,
         temperature=(0.0, 0.2, 0.4),
-        beam_size=5,
-        best_of=5,
+        beam_size=beam_size,
+        best_of=best_of,
         patience=1.2,
         condition_on_previous_text=False,
         compression_ratio_threshold=2.2,
@@ -322,13 +355,13 @@ def transcribe_file(model, audio_path: Path, language: str, prompt: str) -> dict
         no_speech_threshold=0.35,
     )
 
-
 def cleanup_temp_files(file_path: Path, temp_dir: Path) -> None:
     """Delete temporary WAV files created during processing."""
     stem = file_path.stem
     files_to_remove = [
         temp_dir / f"{stem}_normalized.wav",
         temp_dir / f"{stem}_clean.wav",
+        temp_dir / f"{stem}_extracted.wav",
     ]
     for temp_file in files_to_remove:
         if temp_file.exists():
@@ -345,7 +378,6 @@ def cleanup_temp_files(file_path: Path, temp_dir: Path) -> None:
         except Exception as e:
             print(f"Warning: Could not delete chunk directory {chunk_dir}: {e}")
 
-
 def format_ts(seconds: float) -> str:
     total_ms = max(0, int(round(seconds * 1000.0)))
     hours = total_ms // 3600000
@@ -353,7 +385,6 @@ def format_ts(seconds: float) -> str:
     secs = (total_ms % 60000) // 1000
     millis = total_ms % 1000
     return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}"
-
 
 def write_detailed_outputs(output_base: Path, kept_segments: List[dict]) -> None:
     tsv_file = output_base.with_suffix(".segments.tsv")
@@ -386,9 +417,20 @@ def write_detailed_outputs(output_base: Path, kept_segments: List[dict]) -> None
             }
             f_jsonl.write(json.dumps(row, ensure_ascii=True) + "\n")
 
-
 def main() -> None:
     args = build_parser().parse_args()
+    
+    # Apply fast mode optimizations
+    if args.fast:
+        args.chunk_on_silence = True
+        args.preprocess = False
+        beam_size = 1
+        best_of = 1
+        print("Fast mode enabled: chunking on silence, reduced beam search")
+    else:
+        beam_size = 5
+        best_of = 5
+    
     input_folder = Path(args.input_folder)
     output_folder = Path(args.output_folder)
     output_folder.mkdir(parents=True, exist_ok=True)
@@ -409,8 +451,15 @@ def main() -> None:
 
     for file_path in files:
         print(f"\nProcessing: {file_path.name}")
+        
+        # MP4 files need audio extraction first to avoid video stream issues
+        source_audio = file_path
+        if file_path.suffix.lower() == ".mp4":
+            print("  Extracting audio from MP4...")
+            source_audio = extract_audio_from_mp4(file_path, temp_dir)
+        
         print("  Normalizing and amplifying audio...")
-        source_audio = normalize_and_amplify_audio(file_path, temp_dir)
+        source_audio = normalize_and_amplify_audio(source_audio, temp_dir)
         
         if args.preprocess:
             print("  Applying heavy preprocessing (noise reduction, bandpass filter)...")
@@ -432,7 +481,7 @@ def main() -> None:
         merged_segments: List[dict] = []
         total = len(chunks)
         for i, (chunk_file, offset_sec) in enumerate(chunks, start=1):
-            result = transcribe_file(model, chunk_file, args.language, args.prompt)
+            result = transcribe_file(model, chunk_file, args.language, args.prompt, beam_size=beam_size, best_of=best_of)
             chunk_segments = result.get("segments", [])
             for seg in chunk_segments:
                 adj = dict(seg)
