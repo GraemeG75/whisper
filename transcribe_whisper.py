@@ -1,96 +1,473 @@
-import whisper
-import warnings
-import os
-import shutil
-import sys
-from pathlib import Path
-from voicefixer import VoiceFixer
-import torch
+import argparse
+import json
+import math
+import re
 import subprocess
+import sys
+import warnings
+from pathlib import Path
+from typing import List, Tuple
 
-print("CUDA available:", torch.cuda.is_available())
-print("Using device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")
+import torch
+import whisper
 
-lang= "en"  # Default language for transcription
 
 warnings.filterwarnings("ignore", message="FP16 is not supported on CPU*")
 
-# Load a more accurate Whisper model
-model = whisper.load_model("large").to("cuda")
+DEFAULT_DISPATCH_PROMPT = (
+    "Public safety and radio dispatch audio. Keep unit IDs, addresses, street names, cross streets, "
+    "medical and fire call types, and number sequences accurate. Prefer literal transcription over paraphrase."
+)
 
-os.makedirs("processed", exist_ok=True)
 
-# Folder containing your MP3 files
-input_folder = "audio_files"  # Change this to your folder path
+def normalize_segment_text(text: str) -> str:
+    return " ".join(text.lower().strip().split())
 
-# Make sure output folder exists (optional)
-output_folder = "transcripts"
-os.makedirs(output_folder, exist_ok=True)
 
-# Process all .mp3 files in the input folder
-for file_path in Path(input_folder).glob("*.mp3"):    
+def should_skip_segment(segment: dict) -> bool:
+    text = segment.get("text", "").strip()
+    avg_logprob = float(segment.get("avg_logprob", -99.0))
+    no_speech_prob = float(segment.get("no_speech_prob", 0.0))
+    if not text:
+        return True
+    # Drop likely hallucinated low-confidence fragments.
+    # Tighter thresholds to catch "Thank you" and other common hallucinations.
+    if avg_logprob < -0.95 or (avg_logprob < -0.6 and no_speech_prob > 0.25):
+        return True
+    if no_speech_prob > 0.5:
+        return True
+    return False
 
-    input_file = str(file_path)
-    enhanced_audio = input_file
-    enhanced_audio_fixed = input_file
-    '''
-    enhanced_audio = Path(input_folder) / (file_path.stem + ".wav")
-    enhanced_audio_fixed = Path(input_folder) / (file_path.stem + "_fixed.wav")
 
-    # Step 1: Extract and enhance audio using FFmpeg
+def is_likely_hallucination(text: str, avg_logprob: float, no_speech_prob: float) -> bool:
+    """Check if a segment is likely a hallucinated common phrase."""
+    norm = normalize_segment_text(text)
+    common_hallucinations = {
+        "thank you",
+        "thank you all",
+        "thank you very much",
+        "okay",
+        "roger",
+        "yes",
+    }
+    
+    # If it's a very common phrase AND low-to-medium confidence, skip it.
+    if norm in common_hallucinations:
+        if avg_logprob < -0.7 or no_speech_prob > 0.35:
+            return True
+    return False
+
+
+def normalize_and_amplify_audio(input_file: Path, temp_dir: Path) -> Path:
+    """Apply basic normalization and amplification to audio."""
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    output_file = temp_dir / f"{input_file.stem}_normalized.wav"
     ffmpeg_command = [
-        "ffmpeg", "-y", "-i", input_file,
-        "-af", "highpass=f=100, lowpass=f=3500, dynaudnorm",
-        enhanced_audio
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(input_file),
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        "-af",
+        "loudnorm=I=-20:TP=-3:LRA=4,volume=1.3",
+        str(output_file),
     ]
-    subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    result = subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode != 0:
+        return input_file
+    return output_file
 
-    fixer = VoiceFixer()
-    fixer.restore(input=enhanced_audio, output=enhanced_audio_fixed, cuda=True, mode=2
-    '''
-    print("✅ Audio enhanced and extracted")
 
-    #enhanced_audio_fixed = enhanced_audio
+def preprocess_audio_ffmpeg(input_file: Path, temp_dir: Path) -> Path:
+    """Apply heavy preprocessing: noise reduction + bandpass + amplification."""
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    output_file = temp_dir / f"{input_file.stem}_clean.wav"
+    ffmpeg_command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(input_file),
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        "-af",
+        "highpass=f=120,lowpass=f=3500,afftdn,loudnorm=I=-20:TP=-3:LRA=4,volume=1.3",
+        str(output_file),
+    ]
+    result = subprocess.run(ffmpeg_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode != 0:
+        return input_file
+    return output_file
 
-    print(f"Transcribing: {enhanced_audio_fixed}...")
 
-    # Transcribe
-    result = model.transcribe(str(enhanced_audio_fixed), verbose=False, word_timestamps=False, logprob_threshold=-1.0, no_speech_threshold=0.6, language=lang)
+def detect_silences(audio_file: Path, silence_db: float, min_silence_sec: float) -> List[Tuple[float, float]]:
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-i",
+        str(audio_file),
+        "-af",
+        f"silencedetect=noise={silence_db}dB:d={min_silence_sec}",
+        "-f",
+        "null",
+        "-",
+    ]
+    result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    if result.returncode not in (0, 1):
+        return []
 
-    # Estimate total duration from segments
-    segments = result["segments"]
-    total = len(segments)
-    transcript = ""
-    last_end = 0.0
+    text = result.stderr or ""
+    starts = [float(m.group(1)) for m in re.finditer(r"silence_start:\s*([0-9.]+)", text)]
+    ends = [float(m.group(1)) for m in re.finditer(r"silence_end:\s*([0-9.]+)", text)]
+    silences = []
+    for i, start in enumerate(starts):
+        if i < len(ends) and ends[i] >= start:
+            silences.append((start, ends[i]))
+    return silences
 
-    print("\nTranscribing...\n")
-    for i, seg in enumerate(segments):
-        gap = seg['start'] - last_end
-        if gap > 1.0:
-            transcript += "\n"  # Add a line break if there's a long pause
 
-        # Add segment text
-        transcript += seg['text'].strip() + " "
+def get_audio_duration_seconds(audio_file: Path) -> float:
+    command = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        str(audio_file),
+    ]
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    if result.returncode != 0:
+        return 0.0
+    try:
+        return float(result.stdout.strip())
+    except ValueError:
+        return 0.0
+
+
+def build_chunk_ranges(
+    duration: float,
+    silences: List[Tuple[float, float]],
+    target_chunk_sec: float,
+    max_chunk_sec: float,
+) -> List[Tuple[float, float]]:
+    if duration <= 0:
+        return [(0.0, 0.0)]
+
+    if duration <= max_chunk_sec:
+        return [(0.0, duration)]
+
+    ranges: List[Tuple[float, float]] = []
+    start = 0.0
+    while start < duration:
+        desired = start + target_chunk_sec
+        hard_limit = min(start + max_chunk_sec, duration)
+        cut = hard_limit
+
+        for silence_start, silence_end in silences:
+            if silence_start < desired:
+                continue
+            if silence_start > hard_limit:
+                break
+            # Cut at the start of a nearby silence to avoid mid-word splits.
+            cut = silence_start
+            break
+
+        if cut <= start:
+            cut = min(start + max_chunk_sec, duration)
+
+        ranges.append((start, cut))
+        start = cut
+
+    return ranges
+
+
+def export_audio_chunk(source_audio: Path, chunk_file: Path, start_sec: float, end_sec: float) -> bool:
+    command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(source_audio),
+        "-ss",
+        f"{start_sec:.3f}",
+        "-to",
+        f"{end_sec:.3f}",
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        str(chunk_file),
+    ]
+    result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return result.returncode == 0
+
+
+def chunk_audio_by_silence(
+    source_audio: Path,
+    chunk_root: Path,
+    silence_db: float,
+    min_silence_sec: float,
+    target_chunk_sec: float,
+    max_chunk_sec: float,
+) -> List[Tuple[Path, float]]:
+    duration = get_audio_duration_seconds(source_audio)
+    silences = detect_silences(source_audio, silence_db=silence_db, min_silence_sec=min_silence_sec)
+    ranges = build_chunk_ranges(duration, silences, target_chunk_sec=target_chunk_sec, max_chunk_sec=max_chunk_sec)
+
+    chunk_dir = chunk_root / source_audio.stem
+    chunk_dir.mkdir(parents=True, exist_ok=True)
+
+    chunk_paths: List[Tuple[Path, float]] = []
+    for i, (start_sec, end_sec) in enumerate(ranges, start=1):
+        if end_sec - start_sec < 0.3:
+            continue
+        chunk_file = chunk_dir / f"chunk_{i:04d}.wav"
+        if export_audio_chunk(source_audio, chunk_file, start_sec, end_sec):
+            chunk_paths.append((chunk_file, start_sec))
+
+    if not chunk_paths:
+        return [(source_audio, 0.0)]
+    return chunk_paths
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Batch transcribe audio files with Whisper.")
+    parser.add_argument("--input-folder", default="audio_files", help="Folder containing audio files")
+    parser.add_argument("--output-folder", default="transcripts", help="Folder for transcript files")
+    parser.add_argument("--language", default="en", help="Whisper language code")
+    parser.add_argument("--model", default="large", help="Whisper model name")
+    parser.add_argument(
+        "--extensions",
+        nargs="+",
+        default=[".mp3", ".wav", ".m4a", ".flac", ".mp4"],
+        help="Audio file extensions to process",
+    )
+    parser.add_argument(
+        "--preprocess",
+        action="store_true",
+        help="Pre-clean audio with ffmpeg (noise reduction + leveling)",
+    )
+    parser.add_argument(
+        "--chunk-on-silence",
+        action="store_true",
+        help="Split long audio near silence before transcription",
+    )
+    parser.add_argument("--silence-db", type=float, default=-32.0, help="Silence threshold in dB for split detection")
+    parser.add_argument("--min-silence", type=float, default=0.45, help="Minimum silence duration (seconds)")
+    parser.add_argument("--target-chunk-sec", type=float, default=55.0, help="Preferred chunk duration in seconds")
+    parser.add_argument("--max-chunk-sec", type=float, default=80.0, help="Hard maximum chunk duration in seconds")
+    parser.add_argument(
+        "--prompt",
+        default=DEFAULT_DISPATCH_PROMPT,
+        help="Initial prompt to bias transcript vocabulary",
+    )
+    parser.add_argument(
+        "--detailed-output",
+        action="store_true",
+        help="Write a TSV and JSONL file with timestamps and confidence per segment",
+    )
+    return parser
+
+
+def transcribe_file(model, audio_path: Path, language: str, prompt: str) -> dict:
+    return model.transcribe(
+        str(audio_path),
+        language=language,
+        verbose=False,
+        word_timestamps=False,
+        initial_prompt=prompt,
+        temperature=(0.0, 0.2, 0.4),
+        beam_size=5,
+        best_of=5,
+        patience=1.2,
+        condition_on_previous_text=False,
+        compression_ratio_threshold=2.2,
+        logprob_threshold=-0.8,
+        no_speech_threshold=0.35,
+    )
+
+
+def cleanup_temp_files(file_path: Path, temp_dir: Path) -> None:
+    """Delete temporary WAV files created during processing."""
+    stem = file_path.stem
+    files_to_remove = [
+        temp_dir / f"{stem}_normalized.wav",
+        temp_dir / f"{stem}_clean.wav",
+    ]
+    for temp_file in files_to_remove:
+        if temp_file.exists():
+            try:
+                temp_file.unlink()
+            except Exception as e:
+                print(f"Warning: Could not delete {temp_file}: {e}")
+    
+    chunk_dir = temp_dir / "chunks" / stem
+    if chunk_dir.exists():
+        try:
+            import shutil
+            shutil.rmtree(chunk_dir)
+        except Exception as e:
+            print(f"Warning: Could not delete chunk directory {chunk_dir}: {e}")
+
+
+def format_ts(seconds: float) -> str:
+    total_ms = max(0, int(round(seconds * 1000.0)))
+    hours = total_ms // 3600000
+    minutes = (total_ms % 3600000) // 60000
+    secs = (total_ms % 60000) // 1000
+    millis = total_ms % 1000
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}"
+
+
+def write_detailed_outputs(output_base: Path, kept_segments: List[dict]) -> None:
+    tsv_file = output_base.with_suffix(".segments.tsv")
+    jsonl_file = output_base.with_suffix(".segments.jsonl")
+
+    with open(tsv_file, "w", encoding="utf-8") as f_tsv:
+        f_tsv.write("start\tend\tavg_logprob\tno_speech_prob\tlow_conf\ttext\n")
+        for seg in kept_segments:
+            avg_logprob = float(seg.get("avg_logprob", -99.0))
+            no_speech_prob = float(seg.get("no_speech_prob", 0.0))
+            low_conf = avg_logprob < -0.8 or no_speech_prob > 0.35
+            line = (
+                f"{format_ts(float(seg.get('start', 0.0)))}\t"
+                f"{format_ts(float(seg.get('end', 0.0)))}\t"
+                f"{avg_logprob:.3f}\t{no_speech_prob:.3f}\t{int(low_conf)}\t"
+                f"{seg.get('text', '').strip()}\n"
+            )
+            f_tsv.write(line)
+
+    with open(jsonl_file, "w", encoding="utf-8") as f_jsonl:
+        for seg in kept_segments:
+            row = {
+                "start": float(seg.get("start", 0.0)),
+                "end": float(seg.get("end", 0.0)),
+                "start_hms": format_ts(float(seg.get("start", 0.0))),
+                "end_hms": format_ts(float(seg.get("end", 0.0))),
+                "avg_logprob": float(seg.get("avg_logprob", -99.0)),
+                "no_speech_prob": float(seg.get("no_speech_prob", 0.0)),
+                "text": seg.get("text", "").strip(),
+            }
+            f_jsonl.write(json.dumps(row, ensure_ascii=True) + "\n")
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    input_folder = Path(args.input_folder)
+    output_folder = Path(args.output_folder)
+    output_folder.mkdir(parents=True, exist_ok=True)
+    temp_dir = Path("processed")
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("CUDA available:", torch.cuda.is_available())
+    print("Using device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")
+
+    model = whisper.load_model(args.model).to(device)
+    exts = {ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in args.extensions}
+    files = [p for p in sorted(input_folder.iterdir()) if p.is_file() and p.suffix.lower() in exts]
+
+    if not files:
+        print(f"No input files found in '{input_folder}' for extensions: {sorted(exts)}")
+        return
+
+    for file_path in files:
+        print(f"\nProcessing: {file_path.name}")
+        print("  Normalizing and amplifying audio...")
+        source_audio = normalize_and_amplify_audio(file_path, temp_dir)
         
-        last_end = seg['end']
+        if args.preprocess:
+            print("  Applying heavy preprocessing (noise reduction, bandpass filter)...")
+            source_audio = preprocess_audio_ffmpeg(source_audio, temp_dir)
 
-        # Display progress
-        percent = (i + 1) / total * 100
-        sys.stdout.write(f"\rProgress: {percent:.1f}%")
-        sys.stdout.flush()
+        chunks: List[Tuple[Path, float]] = [(source_audio, 0.0)]
+        if args.chunk_on_silence:
+            chunks = chunk_audio_by_silence(
+                source_audio,
+                chunk_root=temp_dir / "chunks",
+                silence_db=args.silence_db,
+                min_silence_sec=args.min_silence,
+                target_chunk_sec=args.target_chunk_sec,
+                max_chunk_sec=args.max_chunk_sec,
+            )
+            print(f"Detected {len(chunks)} chunk(s) for {file_path.name}")
 
-    # Build output filename
-    output_filename = Path(output_folder) / (file_path.stem + "_" + lang + ".txt")
+        print(f"\nTranscribing: {source_audio}...")
+        merged_segments: List[dict] = []
+        total = len(chunks)
+        for i, (chunk_file, offset_sec) in enumerate(chunks, start=1):
+            result = transcribe_file(model, chunk_file, args.language, args.prompt)
+            chunk_segments = result.get("segments", [])
+            for seg in chunk_segments:
+                adj = dict(seg)
+                adj["start"] = float(seg.get("start", 0.0)) + offset_sec
+                adj["end"] = float(seg.get("end", 0.0)) + offset_sec
+                merged_segments.append(adj)
 
-    # Save the transcription
-    with open(output_filename, "w", encoding="utf-8") as f:
-        f.write(transcript.strip())
+            percent = i / total * 100 if total > 0 else 100.0
+            sys.stdout.write(f"\rChunk progress: {percent:.1f}%")
+            sys.stdout.flush()
 
-    print(f"\nSaved to: {output_filename}\n")
+        segments = merged_segments
+        last_end = 0.0
+        transcript_parts = []
+        kept_segments: List[dict] = []
+        last_norm = ""
+        repeat_count = 0
 
-    # Move the original audio file to the 'processed' folder
-    #filepath = os.path.join("processed", str(file_path.name))
-    #print(f"Moving: {enhanced_audio_fixed}... to {filepath}")
-    #shutil.move(enhanced_audio_fixed, filepath)
+        for seg in segments:
+            if should_skip_segment(seg):
+                continue
 
-print("\n✅ All files transcribed!")
+            text = seg.get("text", "").strip()
+            avg_logprob = float(seg.get("avg_logprob", -99.0))
+            no_speech_prob = float(seg.get("no_speech_prob", 0.0))
+            
+            # Check for likely hallucinated common phrases.
+            if is_likely_hallucination(text, avg_logprob, no_speech_prob):
+                continue
+            
+            norm = normalize_segment_text(text)
+            if norm == last_norm:
+                repeat_count += 1
+                # Skip repeated short segments after the first.
+                if len(norm.split()) <= 6 and repeat_count >= 1:
+                    continue
+            else:
+                last_norm = norm
+                repeat_count = 0
+
+            gap = float(seg.get("start", 0.0)) - last_end
+            if gap > 1.0 and transcript_parts:
+                transcript_parts.append("\n")
+
+            start_ts = format_ts(float(seg.get("start", 0.0)))
+            transcript_parts.append(f"[{start_ts}] ")
+            transcript_parts.append(text)
+            transcript_parts.append("\n")
+            last_end = float(seg.get("end", last_end))
+            kept_segments.append(seg)
+
+        output_filename = output_folder / f"{file_path.stem}_{args.language}.txt"
+        with open(output_filename, "w", encoding="utf-8") as f:
+            f.write("".join(transcript_parts).strip())
+
+        print(f"\nSaved to: {output_filename}")
+        if args.detailed_output:
+            write_detailed_outputs(output_filename, kept_segments)
+            print(f"Saved segment diagnostics: {output_filename.with_suffix('.segments.tsv')}")
+        
+        # Clean up temporary files
+        print("Cleaning up temporary files...")
+        cleanup_temp_files(file_path, temp_dir)
+
+    print("\nAll files transcribed.")
+
+
+if __name__ == "__main__":
+    main()
