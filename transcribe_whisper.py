@@ -58,6 +58,37 @@ def is_likely_hallucination(text: str, avg_logprob: float, no_speech_prob: float
     return False
 
 
+def detect_repeating_loop(recent_texts: List[str], window_size: int = 10) -> bool:
+    """Detect if the last N segments form a repeating or alternating loop.
+    
+    Examples:
+    - ["a", "b", "a", "b", "a", "b"] -> True (alternating pattern)
+    - ["x", "x", "x", "x"] -> True (same repeated)
+    """
+    if len(recent_texts) < window_size:
+        return False
+    
+    recent = recent_texts[-window_size:]
+    
+    # Check for exact repetition (all same)
+    if len(set(recent)) == 1:
+        return True
+    
+    # Check for alternating two-phrase pattern (A, B, A, B, A, B, ...)
+    if len(set(recent)) == 2:
+        # If we have exactly 2 unique phrases alternating most of the time
+        unique_phrases = list(set(recent))
+        alternation_count = 0
+        for i in range(1, len(recent)):
+            if recent[i] != recent[i - 1]:
+                alternation_count += 1
+        # If it alternates for at least 70% of the window, it's a loop
+        if alternation_count >= len(recent) * 0.7:
+            return True
+    
+    return False
+
+
 def normalize_and_amplify_audio(input_file: Path, temp_dir: Path) -> Path:
     """Apply basic normalization and amplification to audio."""
     temp_dir.mkdir(parents=True, exist_ok=True)
@@ -419,6 +450,7 @@ def main() -> None:
         kept_segments: List[dict] = []
         last_norm = ""
         repeat_count = 0
+        recent_norms: List[str] = []
 
         for seg in segments:
             if should_skip_segment(seg):
@@ -433,6 +465,14 @@ def main() -> None:
                 continue
             
             norm = normalize_segment_text(text)
+            recent_norms.append(norm)
+            if len(recent_norms) > 10:
+                recent_norms.pop(0)
+            
+            # Detect repeating/alternating loops and skip if detected.
+            if detect_repeating_loop(recent_norms, window_size=10):
+                continue
+            
             if norm == last_norm:
                 repeat_count += 1
                 # Skip repeated short segments after the first.
