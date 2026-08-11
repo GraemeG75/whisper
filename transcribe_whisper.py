@@ -4,11 +4,13 @@ import math
 import re
 import subprocess
 import sys
+import tempfile
+import threading
 import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Generator, List, Optional, Tuple
-from urllib.parse import urljoin
+from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 import torch
 import whisper
@@ -201,9 +203,62 @@ def stream_mp3_from_url(url: str, chunk_size: int = 8192, cookies: Optional[Dict
         raise
 
 def stream_playlist_from_url(url: str, chunk_size: int = 8192, cookies: Optional[Dict[str, str]] = None) -> Generator[bytes, None, None]:
-    """Use FFmpeg to resolve an M3U/M3U8 URL and yield decoded MP3 data."""
+    """Fetch and refresh a playlist with requests while FFmpeg decodes its segments."""
+    if not requests:
+        raise ImportError("requests is required for playlist streaming. Install with: pip install requests")
+
+    request_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://www.broadcastify.com/",
+    }
+    session = requests.Session()
+    manifest_path = Path(tempfile.mktemp(suffix=".m3u8"))
+    stop_refresh = threading.Event()
+
+    def refresh_manifest() -> float:
+        response = session.get(url, headers=request_headers, cookies=cookies, timeout=30)
+        response.raise_for_status()
+        target_duration = 5.0
+        manifest_lines = []
+        for line in response.text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("#EXT-X-TARGETDURATION:"):
+                try:
+                    target_duration = float(stripped.split(":", 1)[1])
+                except ValueError:
+                    pass
+            if stripped and not stripped.startswith("#"):
+                segment_url = urljoin(response.url, stripped)
+                playlist_parts = urlparse(response.url)
+                segment_parts = urlparse(segment_url)
+                if playlist_parts.query and not segment_parts.query:
+                    segment_parts = segment_parts._replace(
+                        query=urlencode(parse_qsl(playlist_parts.query, keep_blank_values=True))
+                    )
+                    segment_url = urlunparse(segment_parts)
+                line = segment_url
+            manifest_lines.append(line)
+        manifest_path.write_text("\n".join(manifest_lines) + "\n", encoding="utf-8")
+        return max(1.0, target_duration / 2.0)
+
+    refresh_interval = refresh_manifest()
+
+    def refresh_loop() -> None:
+        nonlocal refresh_interval
+        while not stop_refresh.wait(refresh_interval):
+            try:
+                refresh_interval = refresh_manifest()
+            except Exception as error:
+                print(f"Warning: Could not refresh playlist: {error}", file=sys.stderr)
+
+    refresh_thread = threading.Thread(target=refresh_loop, daemon=True)
+    refresh_thread.start()
+
     cookie_header = "; ".join(f"{name}={value}" for name, value in (cookies or {}).items())
-    headers = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n"
+    headers = (
+        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n"
+        "Referer: https://www.broadcastify.com/\r\n"
+    )
     if cookie_header:
         headers += f"Cookie: {cookie_header}\r\n"
 
@@ -217,13 +272,13 @@ def stream_playlist_from_url(url: str, chunk_size: int = 8192, cookies: Optional
         "-headers",
         headers,
         "-i",
-        url,
+        str(manifest_path),
         "-vn",
         "-f",
         "mp3",
         "pipe:1",
     ]
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
         if process.stdout is None:
             raise RuntimeError("FFmpeg did not provide an output stream")
@@ -234,13 +289,21 @@ def stream_playlist_from_url(url: str, chunk_size: int = 8192, cookies: Optional
             yield chunk
         return_code = process.wait()
         if return_code != 0:
-            raise RuntimeError(f"FFmpeg playlist streaming failed with exit code {return_code}")
+            error_output = process.stderr.read().decode("utf-8", errors="replace").strip() if process.stderr else ""
+            detail = f": {error_output[-1000:]}" if error_output else ""
+            raise RuntimeError(f"FFmpeg playlist streaming failed with exit code {return_code}{detail}")
     finally:
+        stop_refresh.set()
+        refresh_thread.join(timeout=2)
         if process.poll() is None:
             process.terminate()
             process.wait()
         if process.stdout:
             process.stdout.close()
+        if process.stderr:
+            process.stderr.close()
+        if manifest_path.exists():
+            manifest_path.unlink()
 
 def stream_mp3_from_stdin(chunk_size: int = 8192) -> Generator[bytes, None, None]:
     """
