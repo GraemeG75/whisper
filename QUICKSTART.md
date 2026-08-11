@@ -67,6 +67,16 @@ python transcribe_whisper.py --stream-url "..." --language en --model base --str
 python transcribe_whisper.py --input-folder audio_files --output-folder transcripts --language en --model base
 ```
 
+M3U and M3U8 playlists in the input folder are also supported. FFmpeg resolves
+the playlist entries into one audio file before transcription:
+
+```bash
+python transcribe_whisper.py --input-folder audio_files --output-folder transcripts --language en --model base
+```
+
+Playlist entries must be accessible to FFmpeg, including any required network
+URLs or authentication handled by the playlist source.
+
 ## Common Examples
 
 ### Example 1: Transcribe a live radio stream

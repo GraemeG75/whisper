@@ -358,6 +358,32 @@ def extract_audio_from_mp4(input_file: Path, temp_dir: Path) -> Path:
         return input_file
     return output_file
 
+def extract_audio_from_playlist(input_file: Path, temp_dir: Path) -> Optional[Path]:
+    """Resolve an M3U/M3U8 playlist into a single WAV file with FFmpeg."""
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    output_file = temp_dir / f"{input_file.stem}_playlist.wav"
+    ffmpeg_command = [
+        "ffmpeg",
+        "-y",
+        "-protocol_whitelist",
+        "file,http,https,tcp,tls,crypto",
+        "-i",
+        str(input_file),
+        "-vn",
+        "-acodec",
+        "pcm_s16le",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        str(output_file),
+    ]
+    result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode != 0:
+        print(f"    Warning: Playlist audio extraction failed: {result.stderr[-500:]}")
+        return None
+    return output_file
+
 def preprocess_audio_ffmpeg(input_file: Path, temp_dir: Path) -> Path:
     """Apply heavy preprocessing: aggressive noise reduction + bandpass + amplification."""
     temp_dir.mkdir(parents=True, exist_ok=True)
@@ -523,8 +549,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--extensions",
         nargs="+",
-        default=[".mp3", ".wav", ".m4a", ".flac", ".mp4"],
-        help="Audio file extensions to process",
+        default=[".mp3", ".wav", ".m4a", ".flac", ".mp4", ".m3u", ".m3u8"],
+        help="Audio and playlist file extensions to process",
     )
     
     # Stream-specific options
@@ -716,6 +742,7 @@ def cleanup_temp_files(file_path: Path, temp_dir: Path) -> None:
     """Delete temporary WAV files created during processing."""
     stem = file_path.stem
     files_to_remove = [
+        temp_dir / f"{stem}_playlist.wav",
         temp_dir / f"{stem}_normalized.wav",
         temp_dir / f"{stem}_clean.wav",
         temp_dir / f"{stem}_extracted.wav",
@@ -845,6 +872,12 @@ def main() -> None:
         if file_path.suffix.lower() == ".mp4":
             print("  Extracting audio from MP4...")
             source_audio = extract_audio_from_mp4(file_path, temp_dir)
+        elif file_path.suffix.lower() in {".m3u", ".m3u8"}:
+            print("  Resolving playlist with FFmpeg...")
+            playlist_audio = extract_audio_from_playlist(file_path, temp_dir)
+            if playlist_audio is None:
+                continue
+            source_audio = playlist_audio
         
         print("  Normalizing and amplifying audio...")
         source_audio = normalize_and_amplify_audio(source_audio, temp_dir)
