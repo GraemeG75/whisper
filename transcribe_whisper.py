@@ -8,6 +8,7 @@ import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Generator, List, Optional, Tuple
+from urllib.parse import urljoin
 
 import torch
 import whisper
@@ -362,13 +363,38 @@ def extract_audio_from_playlist(input_file: Path, temp_dir: Path) -> Optional[Pa
     """Resolve an M3U/M3U8 playlist into a single WAV file with FFmpeg."""
     temp_dir.mkdir(parents=True, exist_ok=True)
     output_file = temp_dir / f"{input_file.stem}_playlist.wav"
+    playlist_input = input_file
+    concat_file: Optional[Path] = None
+
+    if input_file.suffix.lower() == ".m3u":
+        entries = []
+        for line in input_file.read_text(encoding="utf-8", errors="replace").splitlines():
+            entry = line.strip()
+            if not entry or entry.startswith("#"):
+                continue
+            resolved_entry = urljoin(input_file.as_uri(), entry)
+            if resolved_entry.startswith("file:///"):
+                resolved_entry = Path(resolved_entry[8:]).as_posix()
+            escaped_entry = resolved_entry.replace("'", "'\\''")
+            entries.append(f"file '{escaped_entry}'")
+
+        if not entries:
+            print(f"    Warning: Playlist contains no media entries: {input_file}")
+            return None
+
+        concat_file = temp_dir / f"{input_file.stem}_playlist.txt"
+        concat_file.write_text("\n".join(entries) + "\n", encoding="utf-8")
+        playlist_input = concat_file
+
     ffmpeg_command = [
         "ffmpeg",
         "-y",
         "-protocol_whitelist",
         "file,http,https,tcp,tls,crypto",
+        "-f",
+        "concat" if input_file.suffix.lower() == ".m3u" else "hls",
         "-i",
-        str(input_file),
+        str(playlist_input),
         "-vn",
         "-acodec",
         "pcm_s16le",
@@ -381,7 +407,11 @@ def extract_audio_from_playlist(input_file: Path, temp_dir: Path) -> Optional[Pa
     result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
         print(f"    Warning: Playlist audio extraction failed: {result.stderr[-500:]}")
+        if concat_file and concat_file.exists():
+            concat_file.unlink()
         return None
+    if concat_file and concat_file.exists():
+        concat_file.unlink()
     return output_file
 
 def preprocess_audio_ffmpeg(input_file: Path, temp_dir: Path) -> Path:
@@ -743,6 +773,7 @@ def cleanup_temp_files(file_path: Path, temp_dir: Path) -> None:
     stem = file_path.stem
     files_to_remove = [
         temp_dir / f"{stem}_playlist.wav",
+        temp_dir / f"{stem}_playlist.txt",
         temp_dir / f"{stem}_normalized.wav",
         temp_dir / f"{stem}_clean.wav",
         temp_dir / f"{stem}_extracted.wav",
