@@ -1,0 +1,577 @@
+namespace WhisperWinForms
+{
+    partial class MainForm
+    {
+        private System.ComponentModel.IContainer components = null;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        private System.Windows.Forms.TabControl tabControlMode;
+        private System.Windows.Forms.TabPage tabPageBatch;
+        private System.Windows.Forms.TabPage tabPageStream;
+
+        private System.Windows.Forms.Label labelInputFolder;
+        private System.Windows.Forms.TextBox textBoxInputFolder;
+        private System.Windows.Forms.Button buttonBrowseInputFolder;
+
+        private System.Windows.Forms.Label labelOutputFolder;
+        private System.Windows.Forms.TextBox textBoxOutputFolder;
+        private System.Windows.Forms.Button buttonBrowseOutputFolder;
+
+        private System.Windows.Forms.CheckBox checkBoxPreprocess;
+        private System.Windows.Forms.CheckBox checkBoxChunkOnSilence;
+        private System.Windows.Forms.CheckBox checkBoxFastMode;
+        private System.Windows.Forms.CheckBox checkBoxDetailedOutput;
+
+        private System.Windows.Forms.Label labelStreamUrl;
+        private System.Windows.Forms.TextBox textBoxStreamUrl;
+        private System.Windows.Forms.Label labelRefererUrl;
+        private System.Windows.Forms.TextBox textBoxRefererUrl;
+        private System.Windows.Forms.Label labelUserAgent;
+        private System.Windows.Forms.TextBox textBoxUserAgent;
+
+        private System.Windows.Forms.Label labelCookiesFile;
+        private System.Windows.Forms.TextBox textBoxCookiesFile;
+        private System.Windows.Forms.Button buttonBrowseCookiesFile;
+
+        private System.Windows.Forms.Label labelStreamOutputFile;
+        private System.Windows.Forms.TextBox textBoxStreamOutputFile;
+        private System.Windows.Forms.Button buttonBrowseStreamOutputFile;
+
+        private System.Windows.Forms.Label labelChunkMs;
+        private System.Windows.Forms.NumericUpDown numericChunkMs;
+        private System.Windows.Forms.Button buttonLogin;
+
+        private System.Windows.Forms.GroupBox groupBoxCommon;
+        private System.Windows.Forms.Label labelModel;
+        private System.Windows.Forms.ComboBox comboBoxModel;
+        private System.Windows.Forms.Label labelLanguage;
+        private System.Windows.Forms.TextBox textBoxLanguage;
+        private System.Windows.Forms.Label labelPrompt;
+        private System.Windows.Forms.TextBox textBoxPrompt;
+
+        private System.Windows.Forms.GroupBox groupBoxEngine;
+        private System.Windows.Forms.Label labelModelsDir;
+        private System.Windows.Forms.TextBox textBoxModelsDir;
+        private System.Windows.Forms.Button buttonBrowseModelsDir;
+        private System.Windows.Forms.CheckBox checkBoxUseGpu;
+
+        private System.Windows.Forms.Button buttonStart;
+        private System.Windows.Forms.Button buttonStop;
+        private System.Windows.Forms.TextBox textBoxLog;
+
+        private void InitializeComponent()
+        {
+            tabControlMode = new TabControl();
+            tabPageBatch = new TabPage();
+            labelInputFolder = new Label();
+            textBoxInputFolder = new TextBox();
+            buttonBrowseInputFolder = new Button();
+            labelOutputFolder = new Label();
+            textBoxOutputFolder = new TextBox();
+            buttonBrowseOutputFolder = new Button();
+            checkBoxPreprocess = new CheckBox();
+            checkBoxChunkOnSilence = new CheckBox();
+            checkBoxFastMode = new CheckBox();
+            checkBoxDetailedOutput = new CheckBox();
+            tabPageStream = new TabPage();
+            labelStreamUrl = new Label();
+            textBoxStreamUrl = new TextBox();
+            labelRefererUrl = new Label();
+            textBoxRefererUrl = new TextBox();
+            labelUserAgent = new Label();
+            textBoxUserAgent = new TextBox();
+            labelCookiesFile = new Label();
+            textBoxCookiesFile = new TextBox();
+            buttonBrowseCookiesFile = new Button();
+            labelStreamOutputFile = new Label();
+            textBoxStreamOutputFile = new TextBox();
+            buttonBrowseStreamOutputFile = new Button();
+            labelChunkMs = new Label();
+            numericChunkMs = new NumericUpDown();
+            buttonLogin = new Button();
+            groupBoxCommon = new GroupBox();
+            labelModel = new Label();
+            comboBoxModel = new ComboBox();
+            labelLanguage = new Label();
+            textBoxLanguage = new TextBox();
+            labelPrompt = new Label();
+            textBoxPrompt = new TextBox();
+            groupBoxEngine = new GroupBox();
+            labelModelsDir = new Label();
+            textBoxModelsDir = new TextBox();
+            buttonBrowseModelsDir = new Button();
+            checkBoxUseGpu = new CheckBox();
+            buttonStart = new Button();
+            buttonStop = new Button();
+            textBoxLog = new TextBox();
+            tabControlMode.SuspendLayout();
+            tabPageBatch.SuspendLayout();
+            tabPageStream.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numericChunkMs).BeginInit();
+            groupBoxCommon.SuspendLayout();
+            groupBoxEngine.SuspendLayout();
+            SuspendLayout();
+            // 
+            // tabControlMode
+            // 
+            tabControlMode.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            tabControlMode.Controls.Add(tabPageBatch);
+            tabControlMode.Controls.Add(tabPageStream);
+            tabControlMode.Location = new Point(12, 100);
+            tabControlMode.Name = "tabControlMode";
+            tabControlMode.SelectedIndex = 0;
+            tabControlMode.Size = new Size(790, 268);
+            tabControlMode.TabIndex = 1;
+            // 
+            // tabPageBatch
+            // 
+            tabPageBatch.Controls.Add(labelInputFolder);
+            tabPageBatch.Controls.Add(textBoxInputFolder);
+            tabPageBatch.Controls.Add(buttonBrowseInputFolder);
+            tabPageBatch.Controls.Add(labelOutputFolder);
+            tabPageBatch.Controls.Add(textBoxOutputFolder);
+            tabPageBatch.Controls.Add(buttonBrowseOutputFolder);
+            tabPageBatch.Controls.Add(checkBoxPreprocess);
+            tabPageBatch.Controls.Add(checkBoxChunkOnSilence);
+            tabPageBatch.Controls.Add(checkBoxFastMode);
+            tabPageBatch.Controls.Add(checkBoxDetailedOutput);
+            tabPageBatch.Location = new Point(4, 24);
+            tabPageBatch.Name = "tabPageBatch";
+            tabPageBatch.Size = new Size(782, 240);
+            tabPageBatch.TabIndex = 0;
+            tabPageBatch.Text = "Batch Processing";
+            // 
+            // labelInputFolder
+            // 
+            labelInputFolder.AutoSize = true;
+            labelInputFolder.Location = new Point(12, 20);
+            labelInputFolder.Name = "labelInputFolder";
+            labelInputFolder.Size = new Size(72, 15);
+            labelInputFolder.TabIndex = 0;
+            labelInputFolder.Text = "Input folder:";
+            // 
+            // textBoxInputFolder
+            // 
+            textBoxInputFolder.Location = new Point(140, 17);
+            textBoxInputFolder.Name = "textBoxInputFolder";
+            textBoxInputFolder.Size = new Size(500, 23);
+            textBoxInputFolder.TabIndex = 1;
+            textBoxInputFolder.Text = "audio_files";
+            // 
+            // buttonBrowseInputFolder
+            // 
+            buttonBrowseInputFolder.Location = new Point(650, 15);
+            buttonBrowseInputFolder.Name = "buttonBrowseInputFolder";
+            buttonBrowseInputFolder.Size = new Size(75, 23);
+            buttonBrowseInputFolder.TabIndex = 2;
+            buttonBrowseInputFolder.Text = "Browse...";
+            buttonBrowseInputFolder.Click += buttonBrowseInputFolder_Click;
+            // 
+            // labelOutputFolder
+            // 
+            labelOutputFolder.AutoSize = true;
+            labelOutputFolder.Location = new Point(12, 52);
+            labelOutputFolder.Name = "labelOutputFolder";
+            labelOutputFolder.Size = new Size(82, 15);
+            labelOutputFolder.TabIndex = 3;
+            labelOutputFolder.Text = "Output folder:";
+            // 
+            // textBoxOutputFolder
+            // 
+            textBoxOutputFolder.Location = new Point(140, 49);
+            textBoxOutputFolder.Name = "textBoxOutputFolder";
+            textBoxOutputFolder.Size = new Size(500, 23);
+            textBoxOutputFolder.TabIndex = 4;
+            textBoxOutputFolder.Text = "transcripts";
+            // 
+            // buttonBrowseOutputFolder
+            // 
+            buttonBrowseOutputFolder.Location = new Point(650, 47);
+            buttonBrowseOutputFolder.Name = "buttonBrowseOutputFolder";
+            buttonBrowseOutputFolder.Size = new Size(75, 23);
+            buttonBrowseOutputFolder.TabIndex = 5;
+            buttonBrowseOutputFolder.Text = "Browse...";
+            buttonBrowseOutputFolder.Click += buttonBrowseOutputFolder_Click;
+            // 
+            // checkBoxPreprocess
+            // 
+            checkBoxPreprocess.AutoSize = true;
+            checkBoxPreprocess.Enabled = false;
+            checkBoxPreprocess.Location = new Point(140, 84);
+            checkBoxPreprocess.Name = "checkBoxPreprocess";
+            checkBoxPreprocess.Size = new Size(298, 19);
+            checkBoxPreprocess.TabIndex = 6;
+            checkBoxPreprocess.Text = "Preprocess (noise reduction) [not yet implemented]";
+            // 
+            // checkBoxChunkOnSilence
+            // 
+            checkBoxChunkOnSilence.AutoSize = true;
+            checkBoxChunkOnSilence.Location = new Point(140, 108);
+            checkBoxChunkOnSilence.Name = "checkBoxChunkOnSilence";
+            checkBoxChunkOnSilence.Size = new Size(117, 19);
+            checkBoxChunkOnSilence.TabIndex = 7;
+            checkBoxChunkOnSilence.Text = "Chunk on silence";
+            // 
+            // checkBoxFastMode
+            // 
+            checkBoxFastMode.AutoSize = true;
+            checkBoxFastMode.Enabled = false;
+            checkBoxFastMode.Location = new Point(140, 132);
+            checkBoxFastMode.Name = "checkBoxFastMode";
+            checkBoxFastMode.Size = new Size(203, 19);
+            checkBoxFastMode.TabIndex = 8;
+            checkBoxFastMode.Text = "Fast mode [not yet implemented]";
+            // 
+            // checkBoxDetailedOutput
+            // 
+            checkBoxDetailedOutput.AutoSize = true;
+            checkBoxDetailedOutput.Location = new Point(140, 156);
+            checkBoxDetailedOutput.Name = "checkBoxDetailedOutput";
+            checkBoxDetailedOutput.Size = new Size(178, 19);
+            checkBoxDetailedOutput.TabIndex = 9;
+            checkBoxDetailedOutput.Text = "Detailed output (TSV/JSONL)";
+            // 
+            // tabPageStream
+            // 
+            tabPageStream.Controls.Add(labelStreamUrl);
+            tabPageStream.Controls.Add(textBoxStreamUrl);
+            tabPageStream.Controls.Add(labelRefererUrl);
+            tabPageStream.Controls.Add(textBoxRefererUrl);
+            tabPageStream.Controls.Add(labelUserAgent);
+            tabPageStream.Controls.Add(textBoxUserAgent);
+            tabPageStream.Controls.Add(labelCookiesFile);
+            tabPageStream.Controls.Add(textBoxCookiesFile);
+            tabPageStream.Controls.Add(buttonBrowseCookiesFile);
+            tabPageStream.Controls.Add(labelStreamOutputFile);
+            tabPageStream.Controls.Add(textBoxStreamOutputFile);
+            tabPageStream.Controls.Add(buttonBrowseStreamOutputFile);
+            tabPageStream.Controls.Add(labelChunkMs);
+            tabPageStream.Controls.Add(numericChunkMs);
+            tabPageStream.Controls.Add(buttonLogin);
+            tabPageStream.Location = new Point(4, 24);
+            tabPageStream.Name = "tabPageStream";
+            tabPageStream.Size = new Size(782, 240);
+            tabPageStream.TabIndex = 1;
+            tabPageStream.Text = "Live Stream (URL)";
+            // 
+            // labelStreamUrl
+            // 
+            labelStreamUrl.AutoSize = true;
+            labelStreamUrl.Location = new Point(12, 20);
+            labelStreamUrl.Name = "labelStreamUrl";
+            labelStreamUrl.Size = new Size(172, 15);
+            labelStreamUrl.TabIndex = 0;
+            labelStreamUrl.Text = "Stream URL (mp3, m3u, m3u8):";
+            // 
+            // textBoxStreamUrl
+            // 
+            textBoxStreamUrl.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxStreamUrl.Location = new Point(200, 17);
+            textBoxStreamUrl.Name = "textBoxStreamUrl";
+            textBoxStreamUrl.Size = new Size(560, 23);
+            textBoxStreamUrl.TabIndex = 1;
+            // 
+            // labelRefererUrl
+            // 
+            labelRefererUrl.AutoSize = true;
+            labelRefererUrl.Location = new Point(12, 52);
+            labelRefererUrl.Name = "labelRefererUrl";
+            labelRefererUrl.Size = new Size(135, 15);
+            labelRefererUrl.TabIndex = 2;
+            labelRefererUrl.Text = "Referer URL (optional):";
+            // 
+            // textBoxRefererUrl
+            // 
+            textBoxRefererUrl.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxRefererUrl.Location = new Point(200, 49);
+            textBoxRefererUrl.Name = "textBoxRefererUrl";
+            textBoxRefererUrl.PlaceholderText = "Defaults to the stream URL origin";
+            textBoxRefererUrl.Size = new Size(560, 23);
+            textBoxRefererUrl.TabIndex = 3;
+            // 
+            // labelUserAgent
+            // 
+            labelUserAgent.AutoSize = true;
+            labelUserAgent.Location = new Point(12, 84);
+            labelUserAgent.Name = "labelUserAgent";
+            labelUserAgent.Size = new Size(131, 15);
+            labelUserAgent.TabIndex = 4;
+            labelUserAgent.Text = "User-Agent (optional):";
+            // 
+            // textBoxUserAgent
+            // 
+            textBoxUserAgent.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxUserAgent.Location = new Point(200, 81);
+            textBoxUserAgent.Name = "textBoxUserAgent";
+            textBoxUserAgent.PlaceholderText = "Defaults to a browser-like Chrome User-Agent";
+            textBoxUserAgent.Size = new Size(560, 23);
+            textBoxUserAgent.TabIndex = 5;
+            // 
+            // labelCookiesFile
+            // 
+            labelCookiesFile.AutoSize = true;
+            labelCookiesFile.Location = new Point(12, 116);
+            labelCookiesFile.Name = "labelCookiesFile";
+            labelCookiesFile.Size = new Size(126, 15);
+            labelCookiesFile.TabIndex = 6;
+            labelCookiesFile.Text = "Cookies file (optional):";
+            // 
+            // textBoxCookiesFile
+            // 
+            textBoxCookiesFile.Location = new Point(200, 113);
+            textBoxCookiesFile.Name = "textBoxCookiesFile";
+            textBoxCookiesFile.Size = new Size(440, 23);
+            textBoxCookiesFile.TabIndex = 7;
+            // 
+            // buttonBrowseCookiesFile
+            // 
+            buttonBrowseCookiesFile.Location = new Point(650, 111);
+            buttonBrowseCookiesFile.Name = "buttonBrowseCookiesFile";
+            buttonBrowseCookiesFile.Size = new Size(75, 23);
+            buttonBrowseCookiesFile.TabIndex = 4;
+            buttonBrowseCookiesFile.Text = "Browse...";
+            buttonBrowseCookiesFile.Click += buttonBrowseCookiesFile_Click;
+            // 
+            // labelStreamOutputFile
+            // 
+            labelStreamOutputFile.AutoSize = true;
+            labelStreamOutputFile.Location = new Point(12, 148);
+            labelStreamOutputFile.Name = "labelStreamOutputFile";
+            labelStreamOutputFile.Size = new Size(122, 15);
+            labelStreamOutputFile.TabIndex = 5;
+            labelStreamOutputFile.Text = "Output file (optional):";
+            // 
+            // textBoxStreamOutputFile
+            // 
+            textBoxStreamOutputFile.Location = new Point(200, 145);
+            textBoxStreamOutputFile.Name = "textBoxStreamOutputFile";
+            textBoxStreamOutputFile.Size = new Size(440, 23);
+            textBoxStreamOutputFile.TabIndex = 6;
+            // 
+            // buttonBrowseStreamOutputFile
+            // 
+            buttonBrowseStreamOutputFile.Location = new Point(650, 143);
+            buttonBrowseStreamOutputFile.Name = "buttonBrowseStreamOutputFile";
+            buttonBrowseStreamOutputFile.Size = new Size(75, 23);
+            buttonBrowseStreamOutputFile.TabIndex = 7;
+            buttonBrowseStreamOutputFile.Text = "Browse...";
+            buttonBrowseStreamOutputFile.Click += buttonBrowseStreamOutputFile_Click;
+            // 
+            // labelChunkMs
+            // 
+            labelChunkMs.AutoSize = true;
+            labelChunkMs.Location = new Point(12, 180);
+            labelChunkMs.Name = "labelChunkMs";
+            labelChunkMs.Size = new Size(91, 15);
+            labelChunkMs.TabIndex = 8;
+            labelChunkMs.Text = "Buffer size (ms):";
+            // 
+            // numericChunkMs
+            // 
+            numericChunkMs.Increment = new decimal(new int[] { 1000, 0, 0, 0 });
+            numericChunkMs.Location = new Point(200, 177);
+            numericChunkMs.Maximum = new decimal(new int[] { 60000, 0, 0, 0 });
+            numericChunkMs.Minimum = new decimal(new int[] { 1000, 0, 0, 0 });
+            numericChunkMs.Name = "numericChunkMs";
+            numericChunkMs.Size = new Size(100, 23);
+            numericChunkMs.TabIndex = 9;
+            numericChunkMs.Value = new decimal(new int[] { 10000, 0, 0, 0 });
+            // 
+            // buttonLogin
+            // 
+            buttonLogin.AutoSize = true;
+            buttonLogin.Location = new Point(330, 177);
+            buttonLogin.Name = "buttonLogin";
+            buttonLogin.TabIndex = 10;
+            buttonLogin.Text = "Login in browser...";
+            buttonLogin.Click += buttonLogin_Click;
+            // 
+            // groupBoxCommon
+            // 
+            groupBoxCommon.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            groupBoxCommon.Controls.Add(labelModel);
+            groupBoxCommon.Controls.Add(comboBoxModel);
+            groupBoxCommon.Controls.Add(labelLanguage);
+            groupBoxCommon.Controls.Add(textBoxLanguage);
+            groupBoxCommon.Controls.Add(labelPrompt);
+            groupBoxCommon.Controls.Add(textBoxPrompt);
+            groupBoxCommon.Location = new Point(12, 374);
+            groupBoxCommon.Name = "groupBoxCommon";
+            groupBoxCommon.Size = new Size(790, 60);
+            groupBoxCommon.TabIndex = 2;
+            groupBoxCommon.TabStop = false;
+            groupBoxCommon.Text = "Transcription settings";
+            // 
+            // labelModel
+            // 
+            labelModel.AutoSize = true;
+            labelModel.Location = new Point(12, 26);
+            labelModel.Name = "labelModel";
+            labelModel.Size = new Size(44, 15);
+            labelModel.TabIndex = 0;
+            labelModel.Text = "Model:";
+            // 
+            // comboBoxModel
+            // 
+            comboBoxModel.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBoxModel.Items.AddRange(new object[] { "tiny", "base", "small", "medium", "large" });
+            comboBoxModel.Location = new Point(70, 23);
+            comboBoxModel.Name = "comboBoxModel";
+            comboBoxModel.Size = new Size(110, 23);
+            comboBoxModel.TabIndex = 1;
+            // 
+            // labelLanguage
+            // 
+            labelLanguage.AutoSize = true;
+            labelLanguage.Location = new Point(200, 26);
+            labelLanguage.Name = "labelLanguage";
+            labelLanguage.Size = new Size(62, 15);
+            labelLanguage.TabIndex = 2;
+            labelLanguage.Text = "Language:";
+            // 
+            // textBoxLanguage
+            // 
+            textBoxLanguage.Location = new Point(270, 23);
+            textBoxLanguage.Name = "textBoxLanguage";
+            textBoxLanguage.Size = new Size(60, 23);
+            textBoxLanguage.TabIndex = 3;
+            textBoxLanguage.Text = "en";
+            // 
+            // labelPrompt
+            // 
+            labelPrompt.AutoSize = true;
+            labelPrompt.Location = new Point(350, 26);
+            labelPrompt.Name = "labelPrompt";
+            labelPrompt.Size = new Size(82, 15);
+            labelPrompt.TabIndex = 4;
+            labelPrompt.Text = "Initial prompt:";
+            // 
+            // textBoxPrompt
+            // 
+            textBoxPrompt.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxPrompt.Location = new Point(430, 23);
+            textBoxPrompt.Name = "textBoxPrompt";
+            textBoxPrompt.Size = new Size(330, 23);
+            textBoxPrompt.TabIndex = 5;
+            textBoxPrompt.Text = "Public safety and radio dispatch audio.";
+            // 
+            // groupBoxEngine
+            // 
+            groupBoxEngine.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            groupBoxEngine.Controls.Add(labelModelsDir);
+            groupBoxEngine.Controls.Add(textBoxModelsDir);
+            groupBoxEngine.Controls.Add(buttonBrowseModelsDir);
+            groupBoxEngine.Controls.Add(checkBoxUseGpu);
+            groupBoxEngine.Location = new Point(12, 12);
+            groupBoxEngine.Name = "groupBoxEngine";
+            groupBoxEngine.Size = new Size(790, 82);
+            groupBoxEngine.TabIndex = 0;
+            groupBoxEngine.TabStop = false;
+            groupBoxEngine.Text = "Transcription engine (Whisper.net)";
+            // 
+            // labelModelsDir
+            // 
+            labelModelsDir.AutoSize = true;
+            labelModelsDir.Location = new Point(12, 22);
+            labelModelsDir.Name = "labelModelsDir";
+            labelModelsDir.Size = new Size(129, 15);
+            labelModelsDir.TabIndex = 0;
+            labelModelsDir.Text = "Whisper models folder:";
+            // 
+            // textBoxModelsDir
+            // 
+            textBoxModelsDir.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxModelsDir.Location = new Point(160, 19);
+            textBoxModelsDir.Name = "textBoxModelsDir";
+            textBoxModelsDir.Size = new Size(540, 23);
+            textBoxModelsDir.TabIndex = 1;
+            // 
+            // buttonBrowseModelsDir
+            // 
+            buttonBrowseModelsDir.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            buttonBrowseModelsDir.Location = new Point(706, 17);
+            buttonBrowseModelsDir.Name = "buttonBrowseModelsDir";
+            buttonBrowseModelsDir.Size = new Size(75, 23);
+            buttonBrowseModelsDir.TabIndex = 2;
+            buttonBrowseModelsDir.Text = "Browse...";
+            buttonBrowseModelsDir.Click += buttonBrowseModelsDir_Click;
+            // 
+            // checkBoxUseGpu
+            // 
+            checkBoxUseGpu.AutoSize = true;
+            checkBoxUseGpu.Checked = true;
+            checkBoxUseGpu.CheckState = CheckState.Checked;
+            checkBoxUseGpu.Location = new Point(160, 52);
+            checkBoxUseGpu.Name = "checkBoxUseGpu";
+            checkBoxUseGpu.Size = new Size(114, 19);
+            checkBoxUseGpu.TabIndex = 3;
+            checkBoxUseGpu.Text = "Use GPU (CUDA)";
+            // 
+            // buttonStart
+            // 
+            buttonStart.Location = new Point(12, 446);
+            buttonStart.Name = "buttonStart";
+            buttonStart.Size = new Size(100, 30);
+            buttonStart.TabIndex = 3;
+            buttonStart.Text = "Start";
+            buttonStart.Click += buttonStart_Click;
+            // 
+            // buttonStop
+            // 
+            buttonStop.Enabled = false;
+            buttonStop.Location = new Point(120, 446);
+            buttonStop.Name = "buttonStop";
+            buttonStop.Size = new Size(100, 30);
+            buttonStop.TabIndex = 4;
+            buttonStop.Text = "Stop";
+            buttonStop.Click += buttonStop_Click;
+            // 
+            // textBoxLog
+            // 
+            textBoxLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxLog.Font = new Font("Consolas", 9F);
+            textBoxLog.Location = new Point(12, 485);
+            textBoxLog.Multiline = true;
+            textBoxLog.Name = "textBoxLog";
+            textBoxLog.ReadOnly = true;
+            textBoxLog.ScrollBars = ScrollBars.Vertical;
+            textBoxLog.Size = new Size(790, 187);
+            textBoxLog.TabIndex = 5;
+            // 
+            // MainForm
+            // 
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(814, 684);
+            Controls.Add(groupBoxEngine);
+            Controls.Add(tabControlMode);
+            Controls.Add(groupBoxCommon);
+            Controls.Add(buttonStart);
+            Controls.Add(buttonStop);
+            Controls.Add(textBoxLog);
+            MinimumSize = new Size(700, 500);
+            Name = "MainForm";
+            Text = "Whisper Transcriber";
+            tabControlMode.ResumeLayout(false);
+            tabPageBatch.ResumeLayout(false);
+            tabPageBatch.PerformLayout();
+            tabPageStream.ResumeLayout(false);
+            tabPageStream.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numericChunkMs).EndInit();
+            groupBoxCommon.ResumeLayout(false);
+            groupBoxCommon.PerformLayout();
+            groupBoxEngine.ResumeLayout(false);
+            groupBoxEngine.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
+        }
+    }
+}

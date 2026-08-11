@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+.vs/
+bin/
+obj/
+models/
+*.csproj.user
