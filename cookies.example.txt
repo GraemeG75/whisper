@@ -1,0 +1,6 @@
+# Netscape HTTP Cookie File
+# This is a generated file!  Do not edit.
+# domain flag path secure expiration name value
+.example.com	TRUE	/	TRUE	1735689600	session_id	abc123def456xyz
+.example.com	TRUE	/	TRUE	1735689600	auth_token	your_authentication_token_here
+.example.com	TRUE	/	TRUE	1735689600	user_preferences	optional_cookie_value

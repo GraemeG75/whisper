@@ -1,0 +1,5 @@
+{
+    "session_id": "abc123def456xyz",
+    "auth_token": "your_authentication_token_here",
+    "user_preferences": "optional_cookie_value"
+}

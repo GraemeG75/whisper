@@ -5,11 +5,24 @@ import re
 import subprocess
 import sys
 import warnings
+from io import BytesIO
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, Generator, List, Optional, Tuple
 
 import torch
 import whisper
+
+try:
+    import requests
+    from http.cookiejar import MozillaCookieJar
+except ImportError:
+    requests = None
+    MozillaCookieJar = None
+
+try:
+    from pydub import AudioSegment
+except ImportError:
+    AudioSegment = None
 
 warnings.filterwarnings("ignore", message="FP16 is not supported on CPU*")
 
@@ -17,6 +30,205 @@ DEFAULT_DISPATCH_PROMPT = (
     "Public safety and radio dispatch audio. Keep unit IDs, addresses, street names, cross streets, "
     "medical and fire call types, and number sequences accurate. Prefer literal transcription over paraphrase."
 )
+
+class AudioStreamBuffer:
+    """Buffer for streaming audio data with WAV conversion."""
+    
+    def __init__(self, buffer_size_ms: int = 5000):
+        """
+        Initialize audio stream buffer.
+        
+        Args:
+            buffer_size_ms: Size of buffer to accumulate before transcription (milliseconds)
+        """
+        self.buffer_size_ms = buffer_size_ms
+        self.buffer = BytesIO()
+        self.audio_data = BytesIO()
+        self.sample_rate = 16000
+        self.total_duration_ms = 0
+        
+    def add_mp3_chunk(self, chunk: bytes) -> List[bytes]:
+        """
+        Add MP3 chunk to buffer and return WAV chunks ready for transcription.
+        
+        Args:
+            chunk: MP3 audio chunk
+            
+        Returns:
+            List of WAV buffers ready for transcription when buffer_size_ms is exceeded
+        """
+        if not AudioSegment:
+            raise ImportError("pydub is required for MP3 streaming. Install with: pip install pydub")
+        
+        self.buffer.write(chunk)
+        ready_chunks = []
+        
+        try:
+            # Try to convert accumulated buffer to audio
+            self.buffer.seek(0)
+            audio = AudioSegment.from_mp3(self.buffer)
+            self.total_duration_ms += len(audio)
+            
+            # Convert to WAV format in memory
+            self.audio_data.write(audio.export(format="wav").read())
+            
+            # If we have enough data, prepare a chunk for transcription
+            if self.total_duration_ms >= self.buffer_size_ms:
+                wav_chunk = self._get_wav_chunk()
+                if wav_chunk:
+                    ready_chunks.append(wav_chunk)
+                self.buffer = BytesIO()
+                self.total_duration_ms = 0
+        except Exception as e:
+            print(f"Warning: Could not decode MP3 chunk: {e}", file=sys.stderr)
+        
+        return ready_chunks
+    
+    def _get_wav_chunk(self) -> Optional[bytes]:
+        """Extract accumulated WAV audio as bytes."""
+        if self.audio_data.tell() == 0:
+            return None
+        
+        self.audio_data.seek(0)
+        wav_data = self.audio_data.read()
+        self.audio_data = BytesIO()
+        return wav_data if wav_data else None
+    
+    def flush(self) -> Optional[bytes]:
+        """Flush remaining audio data."""
+        if self.buffer.tell() > 0:
+            try:
+                self.buffer.seek(0)
+                audio = AudioSegment.from_mp3(self.buffer)
+                self.audio_data.write(audio.export(format="wav").read())
+            except Exception:
+                pass
+        
+        return self._get_wav_chunk()
+
+def load_cookies_from_file(cookie_file: str) -> Dict[str, str]:
+    """
+    Load cookies from a file in Netscape or JSON format.
+    
+    Netscape format (browser export, one per line):
+    # domain flag path secure expiration name value
+    .example.com    TRUE    /    TRUE    1234567890    session_id    abc123
+    
+    JSON format:
+    {
+        "session_id": "abc123",
+        "auth_token": "xyz789"
+    }
+    
+    Args:
+        cookie_file: Path to cookie file
+        
+    Returns:
+        Dictionary of cookies
+    """
+    try:
+        file_path = Path(cookie_file)
+        
+        if not file_path.exists():
+            raise FileNotFoundError(f"Cookie file not found: {cookie_file}")
+        
+        content = file_path.read_text().strip()
+        
+        # Try JSON format first
+        if content.startswith('{'):
+            return json.loads(content)
+        
+        # Try Netscape format
+        cookies = {}
+        for line in content.split('\n'):
+            line = line.strip()
+            # Skip empty lines and comments
+            if not line or line.startswith('#'):
+                continue
+            
+            # Netscape format: domain flag path secure expiration name value
+            parts = line.split('\t')
+            if len(parts) >= 7:
+                name = parts[5]
+                value = parts[6]
+                cookies[name] = value
+        
+        if not cookies:
+            raise ValueError(f"No cookies found in {cookie_file}")
+        
+        return cookies
+    
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in cookie file: {e}")
+    except Exception as e:
+        raise ValueError(f"Error loading cookies from {cookie_file}: {e}")
+
+def stream_mp3_from_url(url: str, chunk_size: int = 8192, cookies: Optional[Dict[str, str]] = None) -> Generator[bytes, None, None]:
+    """
+    Stream MP3 data from a URL.
+    
+    Args:
+        url: URL to MP3 stream or file
+        chunk_size: Size of chunks to read
+        cookies: Optional dictionary of cookies for authentication
+        
+    Yields:
+        Chunks of MP3 data
+    """
+    if not requests:
+        raise ImportError("requests is required for URL streaming. Install with: pip install requests")
+    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        response = requests.get(url, stream=True, timeout=30, cookies=cookies, headers=headers)
+        response.raise_for_status()
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            if chunk:
+                yield chunk
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            print(f"Error: Authentication failed (401). Check your cookies.", file=sys.stderr)
+        elif e.response.status_code == 403:
+            print(f"Error: Access forbidden (403). Check your cookies and permissions.", file=sys.stderr)
+        else:
+            print(f"Error streaming from URL: {e}", file=sys.stderr)
+        raise
+    except Exception as e:
+        print(f"Error streaming from URL: {e}", file=sys.stderr)
+        raise
+
+def stream_mp3_from_stdin(chunk_size: int = 8192) -> Generator[bytes, None, None]:
+    """
+    Stream MP3 data from stdin.
+    
+    Args:
+        chunk_size: Size of chunks to read
+        
+    Yields:
+        Chunks of MP3 data
+    """
+    while True:
+        chunk = sys.stdin.buffer.read(chunk_size)
+        if not chunk:
+            break
+        yield chunk
+
+def transcribe_wav_buffer(model, wav_buffer: bytes, language: str, prompt: str, 
+                          beam_size: int = 5, best_of: int = 5) -> dict:
+    """Transcribe audio from a WAV buffer (bytes)."""
+    try:
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp.write(wav_buffer)
+            tmp.flush()
+            result = transcribe_file(model, Path(tmp.name), language, prompt, beam_size, best_of)
+            Path(tmp.name).unlink()
+            return result
+    except Exception as e:
+        print(f"Error transcribing buffer: {e}", file=sys.stderr)
+        return {"segments": []}
 
 def normalize_segment_text(text: str) -> str:
     return " ".join(text.lower().strip().split())
@@ -297,6 +509,13 @@ def chunk_audio_by_silence(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Batch transcribe audio files with Whisper.")
+    
+    # Mode selection
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--stream-url", type=str, help="Stream MP3 from URL for real-time transcription")
+    mode_group.add_argument("--stream-stdin", action="store_true", help="Stream MP3 from stdin for real-time transcription")
+    
+    # Input/output for batch mode
     parser.add_argument("--input-folder", default="audio_files", help="Folder containing audio files")
     parser.add_argument("--output-folder", default="transcripts", help="Folder for transcript files")
     parser.add_argument("--language", default="en", help="Whisper language code")
@@ -307,6 +526,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=[".mp3", ".wav", ".m4a", ".flac", ".mp4"],
         help="Audio file extensions to process",
     )
+    
+    # Stream-specific options
+    parser.add_argument("--stream-chunk-ms", type=int, default=10000, help="Buffer size for streaming (milliseconds)")
+    parser.add_argument("--stream-output", type=str, help="Output file for streaming results (default: stdout)")
+    parser.add_argument("--stream-auth-cookies", type=str, help="Path to cookie file for authenticated streams (Netscape or JSON format)")
+    
+    # Processing options
     parser.add_argument(
         "--preprocess",
         action="store_true",
@@ -354,6 +580,137 @@ def transcribe_file(model, audio_path: Path, language: str, prompt: str, beam_si
         logprob_threshold=-0.8,
         no_speech_threshold=0.35,
     )
+
+def stream_transcribe_mp3(
+    model,
+    stream_source: str,
+    is_url: bool = True,
+    language: str = "en",
+    prompt: str = DEFAULT_DISPATCH_PROMPT,
+    buffer_size_ms: int = 10000,
+    output_file: Optional[str] = None,
+    beam_size: int = 5,
+    best_of: int = 5,
+    cookies: Optional[Dict[str, str]] = None,
+) -> None:
+    """
+    Real-time or near real-time transcription of MP3 stream.
+    
+    Args:
+        model: Loaded Whisper model
+        stream_source: URL or 'stdin' for stream source
+        is_url: True if stream_source is a URL, False for stdin
+        language: Language code for transcription
+        prompt: Initial prompt for Whisper
+        buffer_size_ms: Milliseconds of audio to buffer before transcribing
+        output_file: Optional file to write results to (default: stdout)
+        beam_size: Beam size for transcription
+        best_of: Best of parameter for transcription
+        cookies: Optional dictionary of cookies for authenticated streams
+    """
+    print(f"Starting real-time stream transcription from {'URL: ' + stream_source if is_url else 'stdin'}", file=sys.stderr)
+    print(f"Buffer size: {buffer_size_ms}ms | Language: {language}", file=sys.stderr)
+    if cookies:
+        print(f"Using authentication cookies", file=sys.stderr)
+    
+    if output_file:
+        out_handle = open(output_file, "w", encoding="utf-8")
+    else:
+        out_handle = sys.stdout
+    
+    try:
+        # Get stream source
+        if is_url:
+            if not requests:
+                raise ImportError("requests is required for URL streaming. Install with: pip install requests")
+            stream = stream_mp3_from_url(stream_source, cookies=cookies)
+        else:
+            stream = stream_mp3_from_stdin()
+        
+        buffer = AudioStreamBuffer(buffer_size_ms=buffer_size_ms)
+        chunk_count = 0
+        last_end = 0.0
+        recent_norms: List[str] = []
+        last_norm = ""
+        
+        print("Listening for audio stream...", file=sys.stderr)
+        
+        for mp3_chunk in stream:
+            # Add MP3 chunk to buffer
+            wav_chunks = buffer.add_mp3_chunk(mp3_chunk)
+            
+            # Process any ready WAV chunks
+            for wav_buffer in wav_chunks:
+                chunk_count += 1
+                print(f"\n[Chunk {chunk_count}] Transcribing...", file=sys.stderr)
+                
+                # Transcribe the buffered audio
+                result = transcribe_wav_buffer(model, wav_buffer, language, prompt, beam_size, best_of)
+                segments = result.get("segments", [])
+                
+                # Process segments with same filtering as batch mode
+                for seg in segments:
+                    if should_skip_segment(seg):
+                        continue
+                    
+                    text = seg.get("text", "").strip()
+                    avg_logprob = float(seg.get("avg_logprob", -99.0))
+                    no_speech_prob = float(seg.get("no_speech_prob", 0.0))
+                    
+                    if is_likely_hallucination(text, avg_logprob, no_speech_prob):
+                        continue
+                    
+                    norm = normalize_segment_text(text)
+                    recent_norms.append(norm)
+                    if len(recent_norms) > 10:
+                        recent_norms.pop(0)
+                    
+                    if detect_repeating_loop(recent_norms, window_size=10):
+                        continue
+                    
+                    if norm == last_norm:
+                        continue  # Skip immediate repeats in streaming
+                    else:
+                        last_norm = norm
+                    
+                    # Write transcribed text in real-time
+                    start_ts = format_ts(float(seg.get("start", 0.0)))
+                    output = f"[{start_ts}] {text}\n"
+                    out_handle.write(output)
+                    out_handle.flush()
+                    print(f"  Transcribed: {text}", file=sys.stderr)
+                    last_end = float(seg.get("end", last_end))
+        
+        # Flush remaining audio data
+        remaining_wav = buffer.flush()
+        if remaining_wav:
+            chunk_count += 1
+            print(f"\n[Chunk {chunk_count}] Transcribing final buffer...", file=sys.stderr)
+            result = transcribe_wav_buffer(model, remaining_wav, language, prompt, beam_size, best_of)
+            segments = result.get("segments", [])
+            
+            for seg in segments:
+                if should_skip_segment(seg):
+                    continue
+                
+                text = seg.get("text", "").strip()
+                avg_logprob = float(seg.get("avg_logprob", -99.0))
+                no_speech_prob = float(seg.get("no_speech_prob", 0.0))
+                
+                if is_likely_hallucination(text, avg_logprob, no_speech_prob):
+                    continue
+                
+                start_ts = format_ts(float(seg.get("start", 0.0)))
+                output = f"[{start_ts}] {text}\n"
+                out_handle.write(output)
+                out_handle.flush()
+                print(f"  Transcribed: {text}", file=sys.stderr)
+        
+        print(f"\nStream transcription complete. Processed {chunk_count} chunks.", file=sys.stderr)
+    
+    finally:
+        if output_file and out_handle != sys.stdout:
+            out_handle.close()
 
 def cleanup_temp_files(file_path: Path, temp_dir: Path) -> None:
     """Delete temporary WAV files created during processing."""
@@ -431,17 +788,48 @@ def main() -> None:
         beam_size = 5
         best_of = 5
     
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("CUDA available:", torch.cuda.is_available())
+    print("Using device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")
+
+    model = whisper.load_model(args.model).to(device)
+    
+    # Handle streaming mode
+    if args.stream_url or args.stream_stdin:
+        stream_source = args.stream_url if args.stream_url else "stdin"
+        
+        # Load cookies if provided
+        cookies = None
+        if args.stream_auth_cookies:
+            try:
+                print(f"Loading authentication cookies from {args.stream_auth_cookies}", file=sys.stderr)
+                cookies = load_cookies_from_file(args.stream_auth_cookies)
+                print(f"Loaded {len(cookies)} cookie(s)", file=sys.stderr)
+            except Exception as e:
+                print(f"Error loading cookies: {e}", file=sys.stderr)
+                return
+        
+        stream_transcribe_mp3(
+            model,
+            stream_source=stream_source,
+            is_url=bool(args.stream_url),
+            language=args.language,
+            prompt=args.prompt,
+            buffer_size_ms=args.stream_chunk_ms,
+            output_file=args.stream_output,
+            beam_size=beam_size,
+            best_of=best_of,
+            cookies=cookies,
+        )
+        return
+    
+    # Batch mode (existing functionality)
     input_folder = Path(args.input_folder)
     output_folder = Path(args.output_folder)
     output_folder.mkdir(parents=True, exist_ok=True)
     temp_dir = Path("processed")
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("CUDA available:", torch.cuda.is_available())
-    print("Using device:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")
-
-    model = whisper.load_model(args.model).to(device)
     exts = {ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in args.extensions}
     files = [p for p in sorted(input_folder.iterdir()) if p.is_file() and p.suffix.lower() in exts]
 
