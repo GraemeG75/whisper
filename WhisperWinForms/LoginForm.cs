@@ -1,16 +1,12 @@
 using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.WinForms;
 using System.Globalization;
 using System.Text.Json;
 
 namespace WhisperWinForms
 {
-    public sealed class LoginForm : Form
+    public sealed partial class LoginForm : Form
     {
         private readonly string _startUrl;
-        private readonly WebView2 _webView;
-        private readonly Button _buttonUseSession;
-        private readonly Button _buttonCancel;
         private BrowserLoginResult? _result;
 
         public BrowserLoginResult? Result => _result;
@@ -18,50 +14,7 @@ namespace WhisperWinForms
         public LoginForm(string startUrl)
         {
             _startUrl = startUrl;
-            _webView = new WebView2
-            {
-                Dock = DockStyle.Fill,
-            };
-            _buttonUseSession = new Button
-            {
-                AutoSize = true,
-                Text = "Use logged-in session",
-            };
-            _buttonCancel = new Button
-            {
-                AutoSize = true,
-                Text = "Cancel",
-            };
-
-            FlowLayoutPanel buttons = new()
-            {
-                AutoSize = true,
-                Dock = DockStyle.Right,
-                FlowDirection = FlowDirection.LeftToRight,
-                Padding = new Padding(8),
-            };
-            buttons.Controls.Add(_buttonUseSession);
-            buttons.Controls.Add(_buttonCancel);
-
-            Panel toolbar = new()
-            {
-                Dock = DockStyle.Bottom,
-                Height = 52,
-            };
-            toolbar.Controls.Add(buttons);
-
-            Controls.Add(_webView);
-            Controls.Add(toolbar);
-            AcceptButton = _buttonUseSession;
-            CancelButton = _buttonCancel;
-            ClientSize = new Size(1100, 760);
-            MinimumSize = new Size(800, 500);
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Sign in to stream provider";
-
-            Load += LoginForm_Load;
-            _buttonUseSession.Click += ButtonUseSession_Click;
-            _buttonCancel.Click += ButtonCancel_Click;
+            InitializeComponent();
         }
 
         private async void LoginForm_Load(object? sender, EventArgs e)
