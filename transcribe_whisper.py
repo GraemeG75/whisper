@@ -200,6 +200,48 @@ def stream_mp3_from_url(url: str, chunk_size: int = 8192, cookies: Optional[Dict
         print(f"Error streaming from URL: {e}", file=sys.stderr)
         raise
 
+def stream_playlist_from_url(url: str, chunk_size: int = 8192, cookies: Optional[Dict[str, str]] = None) -> Generator[bytes, None, None]:
+    """Use FFmpeg to resolve an M3U/M3U8 URL and yield decoded MP3 data."""
+    cookie_header = "; ".join(f"{name}={value}" for name, value in (cookies or {}).items())
+    headers = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n"
+    if cookie_header:
+        headers += f"Cookie: {cookie_header}\r\n"
+
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-protocol_whitelist",
+        "file,http,https,tcp,tls,crypto",
+        "-headers",
+        headers,
+        "-i",
+        url,
+        "-vn",
+        "-f",
+        "mp3",
+        "pipe:1",
+    ]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    try:
+        if process.stdout is None:
+            raise RuntimeError("FFmpeg did not provide an output stream")
+        while True:
+            chunk = process.stdout.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
+        return_code = process.wait()
+        if return_code != 0:
+            raise RuntimeError(f"FFmpeg playlist streaming failed with exit code {return_code}")
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            process.wait()
+        if process.stdout:
+            process.stdout.close()
+
 def stream_mp3_from_stdin(chunk_size: int = 8192) -> Generator[bytes, None, None]:
     """
     Stream MP3 data from stdin.
@@ -679,7 +721,11 @@ def stream_transcribe_mp3(
         if is_url:
             if not requests:
                 raise ImportError("requests is required for URL streaming. Install with: pip install requests")
-            stream = stream_mp3_from_url(stream_source, cookies=cookies)
+            is_playlist = ".m3u" in stream_source.lower()
+            if is_playlist:
+                stream = stream_playlist_from_url(stream_source, cookies=cookies)
+            else:
+                stream = stream_mp3_from_url(stream_source, cookies=cookies)
         else:
             stream = stream_mp3_from_stdin()
         

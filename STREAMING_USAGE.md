@@ -44,6 +44,21 @@ python transcribe_whisper.py \
   --stream-auth-cookies cookies.json
 ```
 
+### Stream from an M3U8/HLS playlist
+
+M3U and M3U8 playlist URLs are resolved through FFmpeg before audio is sent
+to Whisper. Authentication cookies are applied to the playlist and segment
+requests:
+
+```bash
+python transcribe_whisper.py \
+  --stream-url "https://example.com/live/playlist.m3u8" \
+  --language en \
+  --model base \
+  --stream-auth-cookies cookies.txt \
+  --stream-output transcripts/hls.txt
+```
+
 ### 2. Stream from stdin
 
 Pipe MP3 data from another source:
