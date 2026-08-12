@@ -72,15 +72,18 @@ namespace WhisperWinForms.Services
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         chunkIndex++;
-                        await foreach (SegmentData segment in processor.ProcessAsync(File.OpenRead(chunkFile), cancellationToken))
+                        using (FileStream chunkStream = File.OpenRead(chunkFile))
                         {
-                            double segmentStart = segment.Start.TotalSeconds + offsetSec;
-                            mergedSegments.Add(new TranscribedSegment(
-                                segmentStart,
-                                segment.End.TotalSeconds + offsetSec,
-                                segment.Text.Trim(),
-                                segment.Probability));
-                            transcript.Report($"[{TranscriptFilter.FormatTimestamp(TimeSpan.FromSeconds(segmentStart))}] {segment.Text.Trim()}");
+                            await foreach (SegmentData segment in processor.ProcessAsync(chunkStream, cancellationToken))
+                            {
+                                double segmentStart = segment.Start.TotalSeconds + offsetSec;
+                                mergedSegments.Add(new TranscribedSegment(
+                                    segmentStart,
+                                    segment.End.TotalSeconds + offsetSec,
+                                    segment.Text.Trim(),
+                                    segment.Probability));
+                                transcript.Report($"[{TranscriptFilter.FormatTimestamp(TimeSpan.FromSeconds(segmentStart))}] {segment.Text.Trim()}");
+                            }
                         }
                         log.Report($"Chunk progress: {chunkIndex}/{chunks.Count}");
                     }
