@@ -8,7 +8,7 @@ namespace WhisperWinForms
         [STAThread]
         private static void Main()
         {
-            UiLanguageSettings.Apply();
+            WhisperSettings.Apply();
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();

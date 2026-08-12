@@ -10,6 +10,7 @@ namespace WhisperWinForms.Services
         public async Task RunBatchAsync(TranscriptionOptions options, BatchOptions batch, IProgress<string> log, IProgress<string> transcript, CancellationToken cancellationToken)
         {
             string modelPath = await GgmlModelManager.EnsureModelAsync(options.ModelName, options.ModelsDirectory, log);
+            log.Report($"GPU acceleration requested: {options.UseGpu}; CPU threads: {Environment.ProcessorCount}");
             using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu);
             using WhisperProcessor processor = BuildProcessor(factory, options);
 
@@ -102,6 +103,7 @@ namespace WhisperWinForms.Services
         public async Task RunStreamAsync(TranscriptionOptions options, StreamOptions stream, IProgress<string> log, IProgress<string> transcript, IProgress<bool> audioActivity, CancellationToken cancellationToken)
         {
             string modelPath = await GgmlModelManager.EnsureModelAsync(options.ModelName, options.ModelsDirectory, log);
+            log.Report($"GPU acceleration requested: {options.UseGpu}; CPU threads: {Environment.ProcessorCount}");
             using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu);
             using WhisperProcessor processor = BuildProcessor(factory, options);
 
@@ -384,6 +386,7 @@ namespace WhisperWinForms.Services
         {
             WhisperProcessorBuilder builder = factory.CreateBuilder()
                 .WithLanguage(options.Language)
+                .WithThreads(Environment.ProcessorCount)
                 .WithProbabilities();
 
             if (!string.IsNullOrWhiteSpace(options.Prompt))

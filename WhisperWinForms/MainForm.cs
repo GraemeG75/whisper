@@ -34,6 +34,16 @@ namespace WhisperWinForms
                 this.textBoxModelsDir.Text = Path.Combine(AppContext.BaseDirectory, "models");
             }
 
+            (string? savedInputFolder, string? savedOutputFolder) = WhisperSettings.LoadBatchFolders();
+            if (!string.IsNullOrWhiteSpace(savedInputFolder))
+            {
+                this.textBoxInputFolder.Text = savedInputFolder;
+            }
+            if (!string.IsNullOrWhiteSpace(savedOutputFolder))
+            {
+                this.textBoxOutputFolder.Text = savedOutputFolder;
+            }
+
             this.FormClosing += this.MainForm_FormClosing;
         }
 
@@ -230,6 +240,7 @@ namespace WhisperWinForms
                         ChunkOnSilence = this.checkBoxChunkOnSilence.Checked,
                         DetailedOutput = this.checkBoxDetailedOutput.Checked,
                     };
+                    WhisperSettings.SaveBatchFolders(this.textBoxInputFolder.Text, this.textBoxOutputFolder.Text);
                     await _transcriptionService.RunBatchAsync(options, batchOptions, log, transcript, _cancellationTokenSource.Token);
                 }
             }
