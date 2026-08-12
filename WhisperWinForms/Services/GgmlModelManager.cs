@@ -1,11 +1,17 @@
 using Whisper.net;
 using Whisper.net.Ggml;
+using Whisper.net.LibraryLoader;
+using Whisper.net.Logger;
 
 namespace WhisperWinForms.Services
 {
     /// <summary>Downloads and caches ggml Whisper models, and creates the native transcription factory.</summary>
     public static class GgmlModelManager
     {
+        private static readonly object NativeLogLock = new();
+        private static bool _nativeLoggerRegistered;
+        private static IProgress<string>? _currentLog;
+
         public static GgmlType MapModelName(string modelName)
         {
             return modelName.ToLowerInvariant() switch
@@ -39,13 +45,26 @@ namespace WhisperWinForms.Services
             return modelPath;
         }
 
-        public static WhisperFactory CreateFactory(string modelPath, bool useGpu)
+
+        public static WhisperFactory CreateFactory(string modelPath, bool useGpu, IProgress<string> log)
         {
+            _currentLog = log;
+            lock (NativeLogLock)
+            {
+                if (!_nativeLoggerRegistered)
+                {
+                    LogProvider.AddLogger((level, message) => _currentLog?.Report($"[whisper-native:{level}] {message.TrimEnd()}"));
+                    _nativeLoggerRegistered = true;
+                }
+            }
+
             WhisperFactoryOptions options = new WhisperFactoryOptions
             {
                 UseGpu = useGpu,
             };
-            return WhisperFactory.FromPath(modelPath, options);
+            WhisperFactory factory = WhisperFactory.FromPath(modelPath, options);
+            log.Report($"Native runtime library loaded: {RuntimeOptions.LoadedLibrary?.ToString() ?? "unknown"}");
+            return factory;
         }
     }
 }

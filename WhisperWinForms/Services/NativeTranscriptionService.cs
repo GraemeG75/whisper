@@ -11,7 +11,7 @@ namespace WhisperWinForms.Services
         {
             string modelPath = await GgmlModelManager.EnsureModelAsync(options.ModelName, options.ModelsDirectory, log);
             log.Report($"GPU acceleration requested: {options.UseGpu}; CPU threads: {Environment.ProcessorCount}");
-            using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu);
+            using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu, log);
             using WhisperProcessor processor = BuildProcessor(factory, options);
 
             Directory.CreateDirectory(batch.OutputFolder);
@@ -104,7 +104,7 @@ namespace WhisperWinForms.Services
         {
             string modelPath = await GgmlModelManager.EnsureModelAsync(options.ModelName, options.ModelsDirectory, log);
             log.Report($"GPU acceleration requested: {options.UseGpu}; CPU threads: {Environment.ProcessorCount}");
-            using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu);
+            using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu, log);
             using WhisperProcessor processor = BuildProcessor(factory, options);
 
             Dictionary<string, string>? cookies = null;
