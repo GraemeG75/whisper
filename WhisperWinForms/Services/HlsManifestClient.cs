@@ -116,7 +116,7 @@ namespace WhisperWinForms.Services
                 {
                     detail = detail[^500..];
                 }
-                throw new HttpRequestException($"Playlist request via curl failed with exit code {process.ExitCode}: {detail}");
+                throw new HttpRequestException(string.Format(GlobalResources.GetString("errorPlaylistRequest"), process.ExitCode, detail));
             }
             return output;
         }

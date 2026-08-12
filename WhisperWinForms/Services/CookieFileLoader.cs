@@ -9,7 +9,7 @@ namespace WhisperWinForms.Services
         {
             if (!File.Exists(cookieFilePath))
             {
-                throw new FileNotFoundException($"Cookie file not found: {cookieFilePath}");
+                throw new FileNotFoundException(string.Format(GlobalResources.GetString("errorCookieFileNotFound"), cookieFilePath));
             }
 
             string content = File.ReadAllText(cookieFilePath).Trim();
@@ -42,7 +42,7 @@ namespace WhisperWinForms.Services
 
             if (result.Count == 0)
             {
-                throw new InvalidDataException($"No cookies found in {cookieFilePath}");
+                throw new InvalidDataException(string.Format(GlobalResources.GetString("errorNoCookiesInFile"), cookieFilePath));
             }
 
             return result;

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c3469d34e34</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c3469d34e34</value>
+  </resheader>
+  <data name="_buttonCancel.Text" xml:space="preserve"><value>Cancel</value></data>
+  <data name="_buttonUseSession.Text" xml:space="preserve"><value>Use logged-in session</value></data>
+  <data name="buttonBrowseCookiesFile.Text" xml:space="preserve"><value>Browse...</value></data>
+  <data name="buttonBrowseInputFolder.Text" xml:space="preserve"><value>Browse...</value></data>
+  <data name="buttonBrowseModelsDir.Text" xml:space="preserve"><value>Browse...</value></data>
+  <data name="buttonBrowseOutputFolder.Text" xml:space="preserve"><value>Browse...</value></data>
+  <data name="buttonBrowseStreamOutputFile.Text" xml:space="preserve"><value>Browse...</value></data>
+  <data name="buttonLogin.Text" xml:space="preserve"><value>Login in browser...</value></data>
+  <data name="buttonStart.Text" xml:space="preserve"><value>Start</value></data>
+  <data name="buttonStop.Text" xml:space="preserve"><value>Stop</value></data>
+  <data name="checkBoxPreprocess.Text" xml:space="preserve"><value>Preprocess (noise reduction) [not yet implemented]</value></data>
+  <data name="checkBoxChunkOnSilence.Text" xml:space="preserve"><value>Chunk on silence</value></data>
+  <data name="checkBoxFastMode.Text" xml:space="preserve"><value>Fast mode [not yet implemented]</value></data>
+  <data name="checkBoxDetailedOutput.Text" xml:space="preserve"><value>Detailed output (TSV/JSONL)</value></data>
+  <data name="checkBoxUseGpu.Text" xml:space="preserve"><value>Use GPU (CUDA)</value></data>
+  <data name="groupBoxCommon.Text" xml:space="preserve"><value>Transcription settings</value></data>
+  <data name="groupBoxEngine.Text" xml:space="preserve"><value>Transcription engine (Whisper.net)</value></data>
+  <data name="labelChunkMs.Text" xml:space="preserve"><value>Buffer size (ms):</value></data>
+  <data name="labelCookiesFile.Text" xml:space="preserve"><value>Cookies file (optional):</value></data>
+  <data name="labelInputFolder.Text" xml:space="preserve"><value>Input folder:</value></data>
+  <data name="labelLanguage.Text" xml:space="preserve"><value>Language:</value></data>
+  <data name="labelModel.Text" xml:space="preserve"><value>Model:</value></data>
+  <data name="labelModelsDir.Text" xml:space="preserve"><value>Whisper models folder:</value></data>
+  <data name="labelOutputFolder.Text" xml:space="preserve"><value>Output folder:</value></data>
+  <data name="labelPrompt.Text" xml:space="preserve"><value>Initial prompt:</value></data>
+  <data name="labelRefererUrl.Text" xml:space="preserve"><value>Referer URL (optional):</value></data>
+  <data name="labelStreamOutputFile.Text" xml:space="preserve"><value>Output file (optional):</value></data>
+  <data name="labelStreamUrl.Text" xml:space="preserve"><value>Stream URL (mp3, m3u, m3u8):</value></data>
+  <data name="labelUserAgent.Text" xml:space="preserve"><value>User-Agent (optional):</value></data>
+  <data name="buttonSettings.Text" xml:space="preserve"><value>Settings...</value></data>
+  <data name="buttonSettingsOk.Text" xml:space="preserve"><value>OK</value></data>
+  <data name="buttonSettingsCancel.Text" xml:space="preserve"><value>Cancel</value></data>
+  <data name="labelSettingsLanguage.Text" xml:space="preserve"><value>Language:</value></data>
+  <data name="titleSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="titleMainForm" xml:space="preserve"><value>Whisper Transcriber</value></data>
+  <data name="titleLoginForm" xml:space="preserve"><value>Sign in to stream provider</value></data>
+  <data name="tabPageBatch.Text" xml:space="preserve"><value>Batch Processing</value></data>
+  <data name="tabPageStream.Text" xml:space="preserve"><value>Live Stream (URL)</value></data>
+  <data name="textBoxInputFolder.Text" xml:space="preserve"><value>audio_files</value></data>
+  <data name="textBoxOutputFolder.Text" xml:space="preserve"><value>transcripts</value></data>
+  <data name="textBoxPrompt.Text" xml:space="preserve"><value>Public safety and radio dispatch audio.</value></data>
+  <data name="textBoxRefererUrl.PlaceholderText" xml:space="preserve"><value>Defaults to the stream URL origin</value></data>
+  <data name="textBoxUserAgent.PlaceholderText" xml:space="preserve"><value>Defaults to a browser-like Chrome User-Agent</value></data>
+  <data name="modelTiny" xml:space="preserve"><value>Tiny</value></data>
+  <data name="modelBase" xml:space="preserve"><value>Base</value></data>
+  <data name="modelSmall" xml:space="preserve"><value>Small</value></data>
+  <data name="modelMedium" xml:space="preserve"><value>Medium</value></data>
+  <data name="modelLarge" xml:space="preserve"><value>Large</value></data>
+  <data name="languageEnglish" xml:space="preserve"><value>English</value></data>
+  <data name="languageFrench" xml:space="preserve"><value>French</value></data>
+  <data name="languageGerman" xml:space="preserve"><value>German</value></data>
+  <data name="languageSpanish" xml:space="preserve"><value>Spanish</value></data>
+  <data name="messageLanguageRestart" xml:space="preserve"><value>The language will change the next time the application starts.</value></data>
+  <data name="titleLanguageRestart" xml:space="preserve"><value>Language saved</value></data>
+  <data name="messageMissingModelsFolder" xml:space="preserve"><value>Set a folder for downloaded Whisper models.</value></data>
+  <data name="titleMissingModelsFolder" xml:space="preserve"><value>Missing models folder</value></data>
+  <data name="messageMissingStreamUrl" xml:space="preserve"><value>Enter a stream URL.</value></data>
+  <data name="titleMissingStreamUrl" xml:space="preserve"><value>Missing URL</value></data>
+  <data name="messageWebView2RuntimeMissing" xml:space="preserve"><value>Microsoft Edge WebView2 Runtime is required for provider login.</value></data>
+  <data name="titleWebView2RuntimeMissing" xml:space="preserve"><value>WebView2 runtime missing</value></data>
+  <data name="titleLoginPageError" xml:space="preserve"><value>Could not open login page</value></data>
+  <data name="messageNoLoginCookies" xml:space="preserve"><value>No cookies were found for this login session.</value></data>
+  <data name="titleLoginRequired" xml:space="preserve"><value>Login required</value></data>
+  <data name="titleLoginExportError" xml:space="preserve"><value>Could not export login session</value></data>
+  <data name="logCancelled" xml:space="preserve"><value>Cancelled.</value></data>
+  <data name="logErrorPrefix" xml:space="preserve"><value>Error:</value></data>
+  <data name="logStopping" xml:space="preserve"><value>Stopping...</value></data>
+  <data name="errorCookieFileNotFound" xml:space="preserve"><value>Cookie file not found: {0}</value></data>
+  <data name="errorNoCookiesInFile" xml:space="preserve"><value>No cookies found in {0}</value></data>
+  <data name="errorAudioNormalization" xml:space="preserve"><value>Audio normalization failed: {0}</value></data>
+  <data name="errorMp4AudioExtraction" xml:space="preserve"><value>MP4 audio extraction failed: {0}</value></data>
+  <data name="errorPlaylistAudioExtraction" xml:space="preserve"><value>Playlist audio extraction failed: {0}</value></data>
+  <data name="errorExportAudioChunk" xml:space="preserve"><value>Failed to export chunk {0:F3}-{1:F3} from {2}</value></data>
+  <data name="errorPlaylistRequest" xml:space="preserve"><value>Playlist request via curl failed with exit code {0}: {1}</value></data>
+  <data name="errorFfmpegStreamDecoding" xml:space="preserve"><value>FFmpeg stream decoding failed with exit code {0}: {1}</value></data>
+</root>

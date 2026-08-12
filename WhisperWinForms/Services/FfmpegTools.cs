@@ -54,7 +54,7 @@ namespace WhisperWinForms.Services
 
             if (exitCode != 0)
             {
-                throw new InvalidOperationException($"Audio normalization failed: {Tail(stdErr)}");
+                throw new InvalidOperationException(string.Format(GlobalResources.GetString("errorAudioNormalization"), Tail(stdErr)));
             }
 
             return outputFile;
@@ -78,7 +78,7 @@ namespace WhisperWinForms.Services
 
             if (exitCode != 0)
             {
-                throw new InvalidOperationException($"MP4 audio extraction failed: {Tail(stdErr)}");
+                throw new InvalidOperationException(string.Format(GlobalResources.GetString("errorMp4AudioExtraction"), Tail(stdErr)));
             }
 
             return outputFile;
@@ -138,7 +138,7 @@ namespace WhisperWinForms.Services
 
             if (exitCode != 0)
             {
-                throw new InvalidOperationException($"Playlist audio extraction failed: {Tail(stdErr)}");
+                throw new InvalidOperationException(string.Format(GlobalResources.GetString("errorPlaylistAudioExtraction"), Tail(stdErr)));
             }
 
             return outputFile;
@@ -194,7 +194,7 @@ namespace WhisperWinForms.Services
 
             if (exitCode != 0)
             {
-                throw new InvalidOperationException($"Failed to export chunk {startSec:F3}-{endSec:F3} from {sourceAudio}");
+                throw new InvalidOperationException(string.Format(GlobalResources.GetString("errorExportAudioChunk"), startSec, endSec, sourceAudio));
             }
             return chunkFile;
         }

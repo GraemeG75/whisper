@@ -65,6 +65,7 @@ namespace WhisperWinForms
 
         private System.Windows.Forms.Button buttonStart;
         private System.Windows.Forms.Button buttonStop;
+        private System.Windows.Forms.Button buttonSettings;
         private System.Windows.Forms.TextBox textBoxLog;
 
         private void InitializeComponent()
@@ -111,6 +112,7 @@ namespace WhisperWinForms
             checkBoxUseGpu = new CheckBox();
             buttonStart = new Button();
             buttonStop = new Button();
+            buttonSettings = new Button();
             textBoxLog = new TextBox();
             tabControlMode.SuspendLayout();
             tabPageBatch.SuspendLayout();
@@ -147,7 +149,7 @@ namespace WhisperWinForms
             tabPageBatch.Name = "tabPageBatch";
             tabPageBatch.Size = new Size(782, 240);
             tabPageBatch.TabIndex = 0;
-            tabPageBatch.Text = "Batch Processing";
+            tabPageBatch.Text = GlobalResources.GetString("tabPageBatch.Text");
             // 
             // labelInputFolder
             // 
@@ -156,7 +158,7 @@ namespace WhisperWinForms
             labelInputFolder.Name = "labelInputFolder";
             labelInputFolder.Size = new Size(72, 15);
             labelInputFolder.TabIndex = 0;
-            labelInputFolder.Text = "Input folder:";
+            labelInputFolder.Text = GlobalResources.GetString("labelInputFolder.Text");
             // 
             // textBoxInputFolder
             // 
@@ -164,7 +166,7 @@ namespace WhisperWinForms
             textBoxInputFolder.Name = "textBoxInputFolder";
             textBoxInputFolder.Size = new Size(500, 23);
             textBoxInputFolder.TabIndex = 1;
-            textBoxInputFolder.Text = "audio_files";
+            textBoxInputFolder.Text = GlobalResources.GetString("textBoxInputFolder.Text");
             // 
             // buttonBrowseInputFolder
             // 
@@ -172,7 +174,7 @@ namespace WhisperWinForms
             buttonBrowseInputFolder.Name = "buttonBrowseInputFolder";
             buttonBrowseInputFolder.Size = new Size(75, 23);
             buttonBrowseInputFolder.TabIndex = 2;
-            buttonBrowseInputFolder.Text = "Browse...";
+            buttonBrowseInputFolder.Text = GlobalResources.GetString("buttonBrowseInputFolder.Text");
             buttonBrowseInputFolder.Click += buttonBrowseInputFolder_Click;
             // 
             // labelOutputFolder
@@ -182,7 +184,7 @@ namespace WhisperWinForms
             labelOutputFolder.Name = "labelOutputFolder";
             labelOutputFolder.Size = new Size(82, 15);
             labelOutputFolder.TabIndex = 3;
-            labelOutputFolder.Text = "Output folder:";
+            labelOutputFolder.Text = GlobalResources.GetString("labelOutputFolder.Text");
             // 
             // textBoxOutputFolder
             // 
@@ -190,7 +192,7 @@ namespace WhisperWinForms
             textBoxOutputFolder.Name = "textBoxOutputFolder";
             textBoxOutputFolder.Size = new Size(500, 23);
             textBoxOutputFolder.TabIndex = 4;
-            textBoxOutputFolder.Text = "transcripts";
+            textBoxOutputFolder.Text = GlobalResources.GetString("textBoxOutputFolder.Text");
             // 
             // buttonBrowseOutputFolder
             // 
@@ -198,7 +200,7 @@ namespace WhisperWinForms
             buttonBrowseOutputFolder.Name = "buttonBrowseOutputFolder";
             buttonBrowseOutputFolder.Size = new Size(75, 23);
             buttonBrowseOutputFolder.TabIndex = 5;
-            buttonBrowseOutputFolder.Text = "Browse...";
+            buttonBrowseOutputFolder.Text = GlobalResources.GetString("buttonBrowseOutputFolder.Text");
             buttonBrowseOutputFolder.Click += buttonBrowseOutputFolder_Click;
             // 
             // checkBoxPreprocess
@@ -209,7 +211,7 @@ namespace WhisperWinForms
             checkBoxPreprocess.Name = "checkBoxPreprocess";
             checkBoxPreprocess.Size = new Size(298, 19);
             checkBoxPreprocess.TabIndex = 6;
-            checkBoxPreprocess.Text = "Preprocess (noise reduction) [not yet implemented]";
+            checkBoxPreprocess.Text = GlobalResources.GetString("checkBoxPreprocess.Text");
             // 
             // checkBoxChunkOnSilence
             // 
@@ -218,7 +220,7 @@ namespace WhisperWinForms
             checkBoxChunkOnSilence.Name = "checkBoxChunkOnSilence";
             checkBoxChunkOnSilence.Size = new Size(117, 19);
             checkBoxChunkOnSilence.TabIndex = 7;
-            checkBoxChunkOnSilence.Text = "Chunk on silence";
+            checkBoxChunkOnSilence.Text = GlobalResources.GetString("checkBoxChunkOnSilence.Text");
             // 
             // checkBoxFastMode
             // 
@@ -228,7 +230,7 @@ namespace WhisperWinForms
             checkBoxFastMode.Name = "checkBoxFastMode";
             checkBoxFastMode.Size = new Size(203, 19);
             checkBoxFastMode.TabIndex = 8;
-            checkBoxFastMode.Text = "Fast mode [not yet implemented]";
+            checkBoxFastMode.Text = GlobalResources.GetString("checkBoxFastMode.Text");
             // 
             // checkBoxDetailedOutput
             // 
@@ -237,7 +239,7 @@ namespace WhisperWinForms
             checkBoxDetailedOutput.Name = "checkBoxDetailedOutput";
             checkBoxDetailedOutput.Size = new Size(178, 19);
             checkBoxDetailedOutput.TabIndex = 9;
-            checkBoxDetailedOutput.Text = "Detailed output (TSV/JSONL)";
+            checkBoxDetailedOutput.Text = GlobalResources.GetString("checkBoxDetailedOutput.Text");
             // 
             // tabPageStream
             // 
@@ -260,7 +262,7 @@ namespace WhisperWinForms
             tabPageStream.Name = "tabPageStream";
             tabPageStream.Size = new Size(782, 240);
             tabPageStream.TabIndex = 1;
-            tabPageStream.Text = "Live Stream (URL)";
+            tabPageStream.Text = GlobalResources.GetString("tabPageStream.Text");
             // 
             // labelStreamUrl
             // 
@@ -269,7 +271,7 @@ namespace WhisperWinForms
             labelStreamUrl.Name = "labelStreamUrl";
             labelStreamUrl.Size = new Size(172, 15);
             labelStreamUrl.TabIndex = 0;
-            labelStreamUrl.Text = "Stream URL (mp3, m3u, m3u8):";
+            labelStreamUrl.Text = GlobalResources.GetString("labelStreamUrl.Text");
             // 
             // textBoxStreamUrl
             // 
@@ -286,14 +288,14 @@ namespace WhisperWinForms
             labelRefererUrl.Name = "labelRefererUrl";
             labelRefererUrl.Size = new Size(135, 15);
             labelRefererUrl.TabIndex = 2;
-            labelRefererUrl.Text = "Referer URL (optional):";
+            labelRefererUrl.Text = GlobalResources.GetString("labelRefererUrl.Text");
             // 
             // textBoxRefererUrl
             // 
             textBoxRefererUrl.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             textBoxRefererUrl.Location = new Point(200, 49);
             textBoxRefererUrl.Name = "textBoxRefererUrl";
-            textBoxRefererUrl.PlaceholderText = "Defaults to the stream URL origin";
+            textBoxRefererUrl.PlaceholderText = GlobalResources.GetString("textBoxRefererUrl.PlaceholderText");
             textBoxRefererUrl.Size = new Size(560, 23);
             textBoxRefererUrl.TabIndex = 3;
             // 
@@ -304,14 +306,14 @@ namespace WhisperWinForms
             labelUserAgent.Name = "labelUserAgent";
             labelUserAgent.Size = new Size(131, 15);
             labelUserAgent.TabIndex = 4;
-            labelUserAgent.Text = "User-Agent (optional):";
+            labelUserAgent.Text = GlobalResources.GetString("labelUserAgent.Text");
             // 
             // textBoxUserAgent
             // 
             textBoxUserAgent.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             textBoxUserAgent.Location = new Point(200, 81);
             textBoxUserAgent.Name = "textBoxUserAgent";
-            textBoxUserAgent.PlaceholderText = "Defaults to a browser-like Chrome User-Agent";
+            textBoxUserAgent.PlaceholderText = GlobalResources.GetString("textBoxUserAgent.PlaceholderText");
             textBoxUserAgent.Size = new Size(560, 23);
             textBoxUserAgent.TabIndex = 5;
             // 
@@ -322,7 +324,7 @@ namespace WhisperWinForms
             labelCookiesFile.Name = "labelCookiesFile";
             labelCookiesFile.Size = new Size(126, 15);
             labelCookiesFile.TabIndex = 6;
-            labelCookiesFile.Text = "Cookies file (optional):";
+            labelCookiesFile.Text = GlobalResources.GetString("labelCookiesFile.Text");
             // 
             // textBoxCookiesFile
             // 
@@ -337,7 +339,7 @@ namespace WhisperWinForms
             buttonBrowseCookiesFile.Name = "buttonBrowseCookiesFile";
             buttonBrowseCookiesFile.Size = new Size(75, 23);
             buttonBrowseCookiesFile.TabIndex = 4;
-            buttonBrowseCookiesFile.Text = "Browse...";
+            buttonBrowseCookiesFile.Text = GlobalResources.GetString("buttonBrowseCookiesFile.Text");
             buttonBrowseCookiesFile.Click += buttonBrowseCookiesFile_Click;
             // 
             // labelStreamOutputFile
@@ -347,7 +349,7 @@ namespace WhisperWinForms
             labelStreamOutputFile.Name = "labelStreamOutputFile";
             labelStreamOutputFile.Size = new Size(122, 15);
             labelStreamOutputFile.TabIndex = 5;
-            labelStreamOutputFile.Text = "Output file (optional):";
+            labelStreamOutputFile.Text = GlobalResources.GetString("labelStreamOutputFile.Text");
             // 
             // textBoxStreamOutputFile
             // 
@@ -362,7 +364,7 @@ namespace WhisperWinForms
             buttonBrowseStreamOutputFile.Name = "buttonBrowseStreamOutputFile";
             buttonBrowseStreamOutputFile.Size = new Size(75, 23);
             buttonBrowseStreamOutputFile.TabIndex = 7;
-            buttonBrowseStreamOutputFile.Text = "Browse...";
+            buttonBrowseStreamOutputFile.Text = GlobalResources.GetString("buttonBrowseStreamOutputFile.Text");
             buttonBrowseStreamOutputFile.Click += buttonBrowseStreamOutputFile_Click;
             // 
             // labelChunkMs
@@ -372,7 +374,7 @@ namespace WhisperWinForms
             labelChunkMs.Name = "labelChunkMs";
             labelChunkMs.Size = new Size(91, 15);
             labelChunkMs.TabIndex = 8;
-            labelChunkMs.Text = "Buffer size (ms):";
+            labelChunkMs.Text = GlobalResources.GetString("labelChunkMs.Text");
             // 
             // numericChunkMs
             // 
@@ -391,7 +393,7 @@ namespace WhisperWinForms
             buttonLogin.Location = new Point(330, 177);
             buttonLogin.Name = "buttonLogin";
             buttonLogin.TabIndex = 10;
-            buttonLogin.Text = "Login in browser...";
+            buttonLogin.Text = GlobalResources.GetString("buttonLogin.Text");
             buttonLogin.Click += buttonLogin_Click;
             // 
             // groupBoxCommon
@@ -408,7 +410,7 @@ namespace WhisperWinForms
             groupBoxCommon.Size = new Size(790, 60);
             groupBoxCommon.TabIndex = 2;
             groupBoxCommon.TabStop = false;
-            groupBoxCommon.Text = "Transcription settings";
+            groupBoxCommon.Text = GlobalResources.GetString("groupBoxCommon.Text");
             // 
             // labelModel
             // 
@@ -417,12 +419,19 @@ namespace WhisperWinForms
             labelModel.Name = "labelModel";
             labelModel.Size = new Size(44, 15);
             labelModel.TabIndex = 0;
-            labelModel.Text = "Model:";
+            labelModel.Text = GlobalResources.GetString("labelModel.Text");
             // 
             // comboBoxModel
             // 
             comboBoxModel.DropDownStyle = ComboBoxStyle.DropDownList;
-            comboBoxModel.Items.AddRange(new object[] { "tiny", "base", "small", "medium", "large" });
+            comboBoxModel.Items.AddRange(new object[]
+            {
+                GlobalResources.GetString("modelTiny"),
+                GlobalResources.GetString("modelBase"),
+                GlobalResources.GetString("modelSmall"),
+                GlobalResources.GetString("modelMedium"),
+                GlobalResources.GetString("modelLarge")
+            });
             comboBoxModel.Location = new Point(70, 23);
             comboBoxModel.Name = "comboBoxModel";
             comboBoxModel.Size = new Size(110, 23);
@@ -435,7 +444,7 @@ namespace WhisperWinForms
             labelLanguage.Name = "labelLanguage";
             labelLanguage.Size = new Size(62, 15);
             labelLanguage.TabIndex = 2;
-            labelLanguage.Text = "Language:";
+            labelLanguage.Text = GlobalResources.GetString("labelLanguage.Text");
             // 
             // textBoxLanguage
             // 
@@ -452,7 +461,7 @@ namespace WhisperWinForms
             labelPrompt.Name = "labelPrompt";
             labelPrompt.Size = new Size(82, 15);
             labelPrompt.TabIndex = 4;
-            labelPrompt.Text = "Initial prompt:";
+            labelPrompt.Text = GlobalResources.GetString("labelPrompt.Text");
             // 
             // textBoxPrompt
             // 
@@ -461,7 +470,7 @@ namespace WhisperWinForms
             textBoxPrompt.Name = "textBoxPrompt";
             textBoxPrompt.Size = new Size(330, 23);
             textBoxPrompt.TabIndex = 5;
-            textBoxPrompt.Text = "Public safety and radio dispatch audio.";
+            textBoxPrompt.Text = GlobalResources.GetString("textBoxPrompt.Text");
             // 
             // groupBoxEngine
             // 
@@ -475,7 +484,7 @@ namespace WhisperWinForms
             groupBoxEngine.Size = new Size(790, 82);
             groupBoxEngine.TabIndex = 0;
             groupBoxEngine.TabStop = false;
-            groupBoxEngine.Text = "Transcription engine (Whisper.net)";
+            groupBoxEngine.Text = GlobalResources.GetString("groupBoxEngine.Text");
             // 
             // labelModelsDir
             // 
@@ -484,7 +493,7 @@ namespace WhisperWinForms
             labelModelsDir.Name = "labelModelsDir";
             labelModelsDir.Size = new Size(129, 15);
             labelModelsDir.TabIndex = 0;
-            labelModelsDir.Text = "Whisper models folder:";
+            labelModelsDir.Text = GlobalResources.GetString("labelModelsDir.Text");
             // 
             // textBoxModelsDir
             // 
@@ -501,7 +510,7 @@ namespace WhisperWinForms
             buttonBrowseModelsDir.Name = "buttonBrowseModelsDir";
             buttonBrowseModelsDir.Size = new Size(75, 23);
             buttonBrowseModelsDir.TabIndex = 2;
-            buttonBrowseModelsDir.Text = "Browse...";
+            buttonBrowseModelsDir.Text = GlobalResources.GetString("buttonBrowseModelsDir.Text");
             buttonBrowseModelsDir.Click += buttonBrowseModelsDir_Click;
             // 
             // checkBoxUseGpu
@@ -513,7 +522,7 @@ namespace WhisperWinForms
             checkBoxUseGpu.Name = "checkBoxUseGpu";
             checkBoxUseGpu.Size = new Size(114, 19);
             checkBoxUseGpu.TabIndex = 3;
-            checkBoxUseGpu.Text = "Use GPU (CUDA)";
+            checkBoxUseGpu.Text = GlobalResources.GetString("checkBoxUseGpu.Text");
             // 
             // buttonStart
             // 
@@ -521,7 +530,7 @@ namespace WhisperWinForms
             buttonStart.Name = "buttonStart";
             buttonStart.Size = new Size(100, 30);
             buttonStart.TabIndex = 3;
-            buttonStart.Text = "Start";
+            buttonStart.Text = GlobalResources.GetString("buttonStart.Text");
             buttonStart.Click += buttonStart_Click;
             // 
             // buttonStop
@@ -531,8 +540,17 @@ namespace WhisperWinForms
             buttonStop.Name = "buttonStop";
             buttonStop.Size = new Size(100, 30);
             buttonStop.TabIndex = 4;
-            buttonStop.Text = "Stop";
+            buttonStop.Text = GlobalResources.GetString("buttonStop.Text");
             buttonStop.Click += buttonStop_Click;
+            // 
+            // buttonSettings
+            // 
+            buttonSettings.Location = new Point(228, 446);
+            buttonSettings.Name = "buttonSettings";
+            buttonSettings.Size = new Size(100, 30);
+            buttonSettings.TabIndex = 5;
+            buttonSettings.Text = GlobalResources.GetString("buttonSettings.Text");
+            buttonSettings.Click += buttonSettings_Click;
             // 
             // textBoxLog
             // 
@@ -556,10 +574,11 @@ namespace WhisperWinForms
             Controls.Add(groupBoxCommon);
             Controls.Add(buttonStart);
             Controls.Add(buttonStop);
+            Controls.Add(buttonSettings);
             Controls.Add(textBoxLog);
             MinimumSize = new Size(700, 500);
             Name = "MainForm";
-            Text = "Whisper Transcriber";
+            Text = GlobalResources.GetString("titleMainForm");
             tabControlMode.ResumeLayout(false);
             tabPageBatch.ResumeLayout(false);
             tabPageBatch.PerformLayout();

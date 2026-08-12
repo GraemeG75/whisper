@@ -4,6 +4,15 @@ namespace WhisperWinForms
 {
     public partial class MainForm : Form
     {
+        private static readonly Dictionary<string, string> ModelLookup = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["tiny"] = GlobalResources.GetString("modelTiny"),
+            ["base"] = GlobalResources.GetString("modelBase"),
+            ["small"] = GlobalResources.GetString("modelSmall"),
+            ["medium"] = GlobalResources.GetString("modelMedium"),
+            ["large"] = GlobalResources.GetString("modelLarge"),
+        };
+
         private readonly NativeTranscriptionService _transcriptionService;
         private CancellationTokenSource? _cancellationTokenSource;
 
@@ -30,7 +39,7 @@ namespace WhisperWinForms
 
         private static string? FindRepositoryRoot()
         {
-            DirectoryInfo? directory = new DirectoryInfo(AppContext.BaseDirectory);
+            DirectoryInfo? directory = new(AppContext.BaseDirectory);
             for (int i = 0; i < 8 && directory != null; i++)
             {
                 string candidate = Path.Combine(directory.FullName, "transcribe_whisper.py");
@@ -38,8 +47,10 @@ namespace WhisperWinForms
                 {
                     return directory.FullName;
                 }
+
                 directory = directory.Parent;
             }
+
             return null;
         }
 
@@ -49,6 +60,7 @@ namespace WhisperWinForms
             {
                 SelectedPath = this.textBoxModelsDir.Text,
             };
+
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 this.textBoxModelsDir.Text = dialog.SelectedPath;
@@ -61,6 +73,7 @@ namespace WhisperWinForms
             {
                 SelectedPath = this.textBoxInputFolder.Text,
             };
+
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 this.textBoxInputFolder.Text = dialog.SelectedPath;
@@ -73,6 +86,7 @@ namespace WhisperWinForms
             {
                 SelectedPath = this.textBoxOutputFolder.Text,
             };
+
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 this.textBoxOutputFolder.Text = dialog.SelectedPath;
@@ -86,6 +100,7 @@ namespace WhisperWinForms
                 Filter = "Cookie files|*.json;*.txt|All files|*.*",
                 FileName = this.textBoxCookiesFile.Text,
             };
+
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 this.textBoxCookiesFile.Text = dialog.FileName;
@@ -99,6 +114,7 @@ namespace WhisperWinForms
                 Filter = "Text files|*.txt|All files|*.*",
                 FileName = this.textBoxStreamOutputFile.Text,
             };
+
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
                 this.textBoxStreamOutputFile.Text = dialog.FileName;
@@ -110,7 +126,9 @@ namespace WhisperWinForms
             string startUrl = string.IsNullOrWhiteSpace(this.textBoxRefererUrl.Text)
                 ? "https://www.broadcastify.com/"
                 : this.textBoxRefererUrl.Text;
+
             using LoginForm dialog = new(startUrl);
+
             if (dialog.ShowDialog(this) == DialogResult.OK && dialog.Result != null)
             {
                 this.textBoxCookiesFile.Text = dialog.Result.CookieFilePath;
@@ -118,6 +136,34 @@ namespace WhisperWinForms
                 this.textBoxUserAgent.Text = dialog.Result.UserAgent;
                 this.AppendLog($"Browser login session imported ({dialog.Result.CookieFilePath}).");
             }
+        }
+
+        private void buttonSettings_Click(object? sender, EventArgs e)
+        {
+            using SettingsForm dialog = new();
+
+            if (dialog.ShowDialog(this) == DialogResult.OK && dialog.LanguageChanged)
+            {
+                MessageBox.Show(this, GlobalResources.GetString("messageLanguageRestart"), GlobalResources.GetString("titleLanguageRestart"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private string GetSelectedModelName()
+        {
+            if (this.comboBoxModel.SelectedItem is not string selectedDisplayName)
+            {
+                return "base";
+            }
+
+            foreach (KeyValuePair<string, string> entry in ModelLookup)
+            {
+                if (string.Equals(entry.Value, selectedDisplayName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return entry.Key;
+                }
+            }
+
+            return selectedDisplayName;
         }
 
         private async void buttonStart_Click(object? sender, EventArgs e)
@@ -129,14 +175,13 @@ namespace WhisperWinForms
 
             if (string.IsNullOrWhiteSpace(this.textBoxModelsDir.Text))
             {
-                MessageBox.Show(this, "Set a folder for downloaded Whisper models.", "Missing models folder",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, GlobalResources.GetString("messageMissingModelsFolder"), GlobalResources.GetString("titleMissingModelsFolder"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             TranscriptionOptions options = new TranscriptionOptions
             {
-                ModelName = (this.comboBoxModel.SelectedItem as string) ?? "base",
+                ModelName = this.GetSelectedModelName(),
                 ModelsDirectory = this.textBoxModelsDir.Text,
                 UseGpu = this.checkBoxUseGpu.Checked,
                 Language = this.textBoxLanguage.Text,
@@ -157,7 +202,7 @@ namespace WhisperWinForms
                 {
                     if (string.IsNullOrWhiteSpace(this.textBoxStreamUrl.Text))
                     {
-                        MessageBox.Show(this, "Enter a stream URL.", "Missing URL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, GlobalResources.GetString("messageMissingStreamUrl"), GlobalResources.GetString("titleMissingStreamUrl"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
 
@@ -186,11 +231,11 @@ namespace WhisperWinForms
             }
             catch (OperationCanceledException)
             {
-                this.AppendLog("Cancelled.");
+                this.AppendLog(GlobalResources.GetString("logCancelled"));
             }
             catch (Exception ex)
             {
-                this.AppendLog($"Error: {ex.Message}");
+                this.AppendLog($"{GlobalResources.GetString("logErrorPrefix")} {ex.Message}");
             }
             finally
             {
@@ -203,7 +248,7 @@ namespace WhisperWinForms
 
         private void buttonStop_Click(object? sender, EventArgs e)
         {
-            this.AppendLog("Stopping...");
+            this.AppendLog(GlobalResources.GetString("logStopping"));
             _cancellationTokenSource?.Cancel();
         }
 

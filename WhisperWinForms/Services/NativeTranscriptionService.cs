@@ -181,7 +181,7 @@ namespace WhisperWinForms.Services
                     {
                         detail = detail[^1000..];
                     }
-                    throw new InvalidOperationException($"FFmpeg stream decoding failed with exit code {ffmpegProcess.ExitCode}: {detail}");
+                    throw new InvalidOperationException(string.Format(GlobalResources.GetString("errorFfmpegStreamDecoding"), ffmpegProcess.ExitCode, detail));
                 }
 
                 if (filled > 0)

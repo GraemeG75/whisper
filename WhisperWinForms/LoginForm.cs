@@ -26,17 +26,12 @@ namespace WhisperWinForms
             }
             catch (WebView2RuntimeNotFoundException)
             {
-                MessageBox.Show(this,
-                    "Microsoft Edge WebView2 Runtime is required for provider login.",
-                    "WebView2 runtime missing",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MessageBox.Show(this, GlobalResources.GetString("messageWebView2RuntimeMissing"), GlobalResources.GetString("titleWebView2RuntimeMissing"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 DialogResult = DialogResult.Abort;
             }
             catch (Exception exception)
             {
-                MessageBox.Show(this, exception.Message, "Could not open login page",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, exception.Message, GlobalResources.GetString("titleLoginPageError"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 DialogResult = DialogResult.Abort;
             }
         }
@@ -52,27 +47,28 @@ namespace WhisperWinForms
             {
                 string cookieFilePath = Path.Combine(Path.GetTempPath(), $"whisper-cookies-{Guid.NewGuid():N}.txt");
                 IReadOnlyList<CoreWebView2Cookie> cookies = await _webView.CoreWebView2.CookieManager.GetCookiesAsync(_webView.Source?.ToString() ?? _startUrl);
+
                 if (cookies.Count == 0)
                 {
-                    MessageBox.Show(this, "No cookies were found for this login session.", "Login required",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, GlobalResources.GetString("messageNoLoginCookies"), GlobalResources.GetString("titleLoginRequired"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
                 await File.WriteAllTextAsync(cookieFilePath, BuildNetscapeCookieFile(cookies));
                 string userAgent = await GetUserAgentAsync();
+
                 _result = new BrowserLoginResult
                 {
                     CookieFilePath = cookieFilePath,
                     RefererUrl = _webView.Source?.ToString() ?? _startUrl,
                     UserAgent = userAgent,
                 };
+
                 DialogResult = DialogResult.OK;
             }
             catch (Exception exception)
             {
-                MessageBox.Show(this, exception.Message, "Could not export login session",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, exception.Message, GlobalResources.GetString("titleLoginExportError"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -100,11 +96,8 @@ namespace WhisperWinForms
                 string domain = cookie.IsHttpOnly ? $"#HttpOnly_{cookie.Domain}" : cookie.Domain;
                 string includeSubdomains = cookie.Domain.StartsWith('.') ? "TRUE" : "FALSE";
                 string secure = cookie.IsSecure ? "TRUE" : "FALSE";
-                string expiration = cookie.Expires != DateTime.MinValue
-                    ? new DateTimeOffset(cookie.Expires).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture)
-                    : "0";
-                lines.Add(string.Join("\t", domain, includeSubdomains, cookie.Path, secure,
-                    expiration, cookie.Name, cookie.Value));
+                string expiration = cookie.Expires != DateTime.MinValue ? new DateTimeOffset(cookie.Expires).ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture) : "0";
+                lines.Add(string.Join("\t", domain, includeSubdomains, cookie.Path, secure, expiration, cookie.Name, cookie.Value));
             }
 
             return string.Join(Environment.NewLine, lines) + Environment.NewLine;

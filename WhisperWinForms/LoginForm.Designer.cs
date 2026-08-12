@@ -53,7 +53,7 @@ namespace WhisperWinForms
             _buttonUseSession.Name = "_buttonUseSession";
             _buttonUseSession.Size = new Size(135, 25);
             _buttonUseSession.TabIndex = 0;
-            _buttonUseSession.Text = "Use logged-in session";
+            _buttonUseSession.Text = GlobalResources.GetString("_buttonUseSession.Text");
             _buttonUseSession.UseVisualStyleBackColor = true;
             _buttonUseSession.Click += ButtonUseSession_Click;
             // 
@@ -64,7 +64,7 @@ namespace WhisperWinForms
             _buttonCancel.Name = "_buttonCancel";
             _buttonCancel.Size = new Size(54, 25);
             _buttonCancel.TabIndex = 1;
-            _buttonCancel.Text = "Cancel";
+            _buttonCancel.Text = GlobalResources.GetString("_buttonCancel.Text");
             _buttonCancel.UseVisualStyleBackColor = true;
             _buttonCancel.Click += ButtonCancel_Click;
             // 
@@ -101,7 +101,7 @@ namespace WhisperWinForms
             MinimumSize = new Size(800, 500);
             Name = "LoginForm";
             StartPosition = FormStartPosition.CenterParent;
-            Text = "Sign in to stream provider";
+            Text = GlobalResources.GetString("titleLoginForm");
             Load += LoginForm_Load;
             ((System.ComponentModel.ISupportInitialize)_webView).EndInit();
             buttons.ResumeLayout(false);

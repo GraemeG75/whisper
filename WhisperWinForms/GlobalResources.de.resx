@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c3469d34e34</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c3469d34e34</value>
+  </resheader>
+  <data name="_buttonCancel.Text" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="_buttonUseSession.Text" xml:space="preserve"><value>Angemeldete Sitzung verwenden</value></data>
+  <data name="buttonBrowseCookiesFile.Text" xml:space="preserve"><value>Durchsuchen...</value></data>
+  <data name="buttonBrowseInputFolder.Text" xml:space="preserve"><value>Durchsuchen...</value></data>
+  <data name="buttonBrowseModelsDir.Text" xml:space="preserve"><value>Durchsuchen...</value></data>
+  <data name="buttonBrowseOutputFolder.Text" xml:space="preserve"><value>Durchsuchen...</value></data>
+  <data name="buttonBrowseStreamOutputFile.Text" xml:space="preserve"><value>Durchsuchen...</value></data>
+  <data name="buttonLogin.Text" xml:space="preserve"><value>Im Browser anmelden...</value></data>
+  <data name="buttonStart.Text" xml:space="preserve"><value>Starten</value></data>
+  <data name="buttonStop.Text" xml:space="preserve"><value>Stoppen</value></data>
+  <data name="checkBoxPreprocess.Text" xml:space="preserve"><value>Vorverarbeitung (Rauschunterdrückung) [noch nicht implementiert]</value></data>
+  <data name="checkBoxChunkOnSilence.Text" xml:space="preserve"><value>Beim Schweigen aufteilen</value></data>
+  <data name="checkBoxFastMode.Text" xml:space="preserve"><value>Schnellmodus [noch nicht implementiert]</value></data>
+  <data name="checkBoxDetailedOutput.Text" xml:space="preserve"><value>Detaillierte Ausgabe (TSV/JSONL)</value></data>
+  <data name="checkBoxUseGpu.Text" xml:space="preserve"><value>GPU verwenden (CUDA)</value></data>
+  <data name="groupBoxCommon.Text" xml:space="preserve"><value>Transkriptions-Einstellungen</value></data>
+  <data name="groupBoxEngine.Text" xml:space="preserve"><value>Transkriptions-Engine (Whisper.net)</value></data>
+  <data name="labelChunkMs.Text" xml:space="preserve"><value>Puffergröße (ms):</value></data>
+  <data name="labelCookiesFile.Text" xml:space="preserve"><value>Cookie-Datei (optional):</value></data>
+  <data name="labelInputFolder.Text" xml:space="preserve"><value>Eingabeordner:</value></data>
+  <data name="labelLanguage.Text" xml:space="preserve"><value>Sprache:</value></data>
+  <data name="labelModel.Text" xml:space="preserve"><value>Modell:</value></data>
+  <data name="labelModelsDir.Text" xml:space="preserve"><value>Whisper-Modellordner:</value></data>
+  <data name="labelOutputFolder.Text" xml:space="preserve"><value>Ausgabeordner:</value></data>
+  <data name="labelPrompt.Text" xml:space="preserve"><value>Anfangsaufforderung:</value></data>
+  <data name="labelRefererUrl.Text" xml:space="preserve"><value>Referer-URL (optional):</value></data>
+  <data name="labelStreamOutputFile.Text" xml:space="preserve"><value>Ausgabedatei (optional):</value></data>
+  <data name="labelStreamUrl.Text" xml:space="preserve"><value>Stream-URL (mp3, m3u, m3u8):</value></data>
+  <data name="labelUserAgent.Text" xml:space="preserve"><value>User-Agent (optional):</value></data>
+  <data name="buttonSettings.Text" xml:space="preserve"><value>Einstellungen...</value></data>
+  <data name="buttonSettingsOk.Text" xml:space="preserve"><value>OK</value></data>
+  <data name="buttonSettingsCancel.Text" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="labelSettingsLanguage.Text" xml:space="preserve"><value>Sprache:</value></data>
+  <data name="titleSettings" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="titleMainForm" xml:space="preserve"><value>Whisper-Transkription</value></data>
+  <data name="titleLoginForm" xml:space="preserve"><value>Bei Streaming-Anbieter anmelden</value></data>
+  <data name="tabPageBatch.Text" xml:space="preserve"><value>Batch-Verarbeitung</value></data>
+  <data name="tabPageStream.Text" xml:space="preserve"><value>Live-Stream (URL)</value></data>
+  <data name="textBoxInputFolder.Text" xml:space="preserve"><value>audio_dateien</value></data>
+  <data name="textBoxOutputFolder.Text" xml:space="preserve"><value>transkripte</value></data>
+  <data name="textBoxPrompt.Text" xml:space="preserve"><value>Öffentliche Sicherheits- und Funkleitungs-Audio.</value></data>
+  <data name="textBoxRefererUrl.PlaceholderText" xml:space="preserve"><value>Standardmäßig Ursprung der Stream-URL</value></data>
+  <data name="textBoxUserAgent.PlaceholderText" xml:space="preserve"><value>Standardmäßig ein browserähnlicher Chrome User-Agent</value></data>
+  <data name="modelTiny" xml:space="preserve"><value>Winzig</value></data>
+  <data name="modelBase" xml:space="preserve"><value>Basis</value></data>
+  <data name="modelSmall" xml:space="preserve"><value>Klein</value></data>
+  <data name="modelMedium" xml:space="preserve"><value>Mittel</value></data>
+  <data name="modelLarge" xml:space="preserve"><value>Groß</value></data>
+  <data name="languageEnglish" xml:space="preserve"><value>Englisch</value></data>
+  <data name="languageFrench" xml:space="preserve"><value>Französisch</value></data>
+  <data name="languageGerman" xml:space="preserve"><value>Deutsch</value></data>
+  <data name="languageSpanish" xml:space="preserve"><value>Spanisch</value></data>
+  <data name="messageLanguageRestart" xml:space="preserve"><value>Die Sprache wird beim nächsten Start der Anwendung geändert.</value></data>
+  <data name="titleLanguageRestart" xml:space="preserve"><value>Sprache gespeichert</value></data>
+  <data name="messageMissingModelsFolder" xml:space="preserve"><value>Legen Sie einen Ordner für heruntergeladene Whisper-Modelle fest.</value></data>
+  <data name="titleMissingModelsFolder" xml:space="preserve"><value>Modellordner fehlt</value></data>
+  <data name="messageMissingStreamUrl" xml:space="preserve"><value>Geben Sie eine Stream-URL ein.</value></data>
+  <data name="titleMissingStreamUrl" xml:space="preserve"><value>URL fehlt</value></data>
+  <data name="messageWebView2RuntimeMissing" xml:space="preserve"><value>Die Microsoft Edge WebView2-Laufzeit ist für die Anbieteranmeldung erforderlich.</value></data>
+  <data name="titleWebView2RuntimeMissing" xml:space="preserve"><value>WebView2-Laufzeit fehlt</value></data>
+  <data name="titleLoginPageError" xml:space="preserve"><value>Anmeldeseite konnte nicht geöffnet werden</value></data>
+  <data name="messageNoLoginCookies" xml:space="preserve"><value>Für diese Sitzung wurden keine Cookies gefunden.</value></data>
+  <data name="titleLoginRequired" xml:space="preserve"><value>Anmeldung erforderlich</value></data>
+  <data name="titleLoginExportError" xml:space="preserve"><value>Anmeldesitzung konnte nicht exportiert werden</value></data>
+  <data name="logCancelled" xml:space="preserve"><value>Abgebrochen.</value></data>
+  <data name="logErrorPrefix" xml:space="preserve"><value>Fehler:</value></data>
+  <data name="logStopping" xml:space="preserve"><value>Wird beendet...</value></data>
+  <data name="errorCookieFileNotFound" xml:space="preserve"><value>Cookie-Datei nicht gefunden: {0}</value></data>
+  <data name="errorNoCookiesInFile" xml:space="preserve"><value>Keine Cookies in {0} gefunden</value></data>
+  <data name="errorAudioNormalization" xml:space="preserve"><value>Audionormalisierung fehlgeschlagen: {0}</value></data>
+  <data name="errorMp4AudioExtraction" xml:space="preserve"><value>MP4-Audioextraktion fehlgeschlagen: {0}</value></data>
+  <data name="errorPlaylistAudioExtraction" xml:space="preserve"><value>Audioextraktion aus der Wiedergabeliste fehlgeschlagen: {0}</value></data>
+  <data name="errorExportAudioChunk" xml:space="preserve"><value>Export des Abschnitts {0:F3}-{1:F3} aus {2} fehlgeschlagen</value></data>
+  <data name="errorPlaylistRequest" xml:space="preserve"><value>Wiedergabelistenanfrage über curl mit Exitcode {0} fehlgeschlagen: {1}</value></data>
+  <data name="errorFfmpegStreamDecoding" xml:space="preserve"><value>FFmpeg-Streamdekodierung mit Exitcode {0} fehlgeschlagen: {1}</value></data>
+</root>
