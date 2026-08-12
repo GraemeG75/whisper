@@ -9,6 +9,7 @@ namespace WhisperWinForms.Services
         private readonly IReadOnlyDictionary<string, string>? _cookies;
         private readonly string? _refererUrl;
         private readonly string? _userAgent;
+        private readonly HashSet<string> _loggedSegmentUrls = new(StringComparer.OrdinalIgnoreCase);
 
         public HlsManifestClient(IReadOnlyDictionary<string, string>? cookies, string? refererUrl, string? userAgent)
         {
@@ -17,8 +18,12 @@ namespace WhisperWinForms.Services
             _userAgent = userAgent;
         }
 
-        public async Task<double> RefreshManifestAsync(string url, string localManifestPath, CancellationToken cancellationToken)
+        public Task<double> RefreshManifestAsync(string url, string localManifestPath, CancellationToken cancellationToken)
+            => this.RefreshManifestAsync(url, localManifestPath, log: null, cancellationToken);
+
+        public async Task<double> RefreshManifestAsync(string url, string localManifestPath, IProgress<string>? log, CancellationToken cancellationToken)
         {
+            log?.Report($"Fetching playlist: {url}");
             string text = await DownloadManifestWithCurlAsync(url, cancellationToken);
             Uri playlistUri = new(url);
 
@@ -41,6 +46,10 @@ namespace WhisperWinForms.Services
                 if (trimmed.Length > 0 && !trimmed.StartsWith('#'))
                 {
                     line = ResolveSegmentUrl(playlistUri, trimmed);
+                    if (log != null && _loggedSegmentUrls.Add(line))
+                    {
+                        log.Report($"Segment: {line}");
+                    }
                 }
 
                 manifestLines.Add(line);

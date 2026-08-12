@@ -189,11 +189,15 @@ namespace WhisperWinForms
             };
 
             this.textBoxLog.Clear();
+            this.textBoxTranscript.Clear();
+            this.SetAudioActivity(false);
             _cancellationTokenSource = new CancellationTokenSource();
             this.buttonStart.Enabled = false;
             this.buttonStop.Enabled = true;
 
             IProgress<string> log = new Progress<string>(this.AppendLog);
+            IProgress<string> transcript = new Progress<string>(this.AppendTranscript);
+            IProgress<bool> audioActivity = new Progress<bool>(this.SetAudioActivity);
             bool isStream = this.tabControlMode.SelectedTab == this.tabPageStream;
 
             try
@@ -215,7 +219,7 @@ namespace WhisperWinForms
                         OutputFile = string.IsNullOrWhiteSpace(this.textBoxStreamOutputFile.Text) ? null : this.textBoxStreamOutputFile.Text,
                         BufferMs = (int)this.numericChunkMs.Value,
                     };
-                    await _transcriptionService.RunStreamAsync(options, streamOptions, log, _cancellationTokenSource.Token);
+                    await _transcriptionService.RunStreamAsync(options, streamOptions, log, transcript, audioActivity, _cancellationTokenSource.Token);
                 }
                 else
                 {
@@ -226,7 +230,7 @@ namespace WhisperWinForms
                         ChunkOnSilence = this.checkBoxChunkOnSilence.Checked,
                         DetailedOutput = this.checkBoxDetailedOutput.Checked,
                     };
-                    await _transcriptionService.RunBatchAsync(options, batchOptions, log, _cancellationTokenSource.Token);
+                    await _transcriptionService.RunBatchAsync(options, batchOptions, log, transcript, _cancellationTokenSource.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -243,6 +247,7 @@ namespace WhisperWinForms
                 _cancellationTokenSource = null;
                 this.buttonStart.Enabled = true;
                 this.buttonStop.Enabled = false;
+                this.SetAudioActivity(false);
             }
         }
 
@@ -267,6 +272,59 @@ namespace WhisperWinForms
         private void AppendLogInternal(string line)
         {
             this.textBoxLog.AppendText(line + Environment.NewLine);
+        }
+
+        private void AppendTranscript(string line)
+        {
+            if (this.textBoxTranscript.InvokeRequired)
+            {
+                this.textBoxTranscript.BeginInvoke(new Action(() => this.AppendTranscriptInternal(line)));
+            }
+            else
+            {
+                this.AppendTranscriptInternal(line);
+            }
+        }
+
+        private void AppendTranscriptInternal(string line)
+        {
+            this.textBoxTranscript.AppendText(line + Environment.NewLine);
+        }
+
+        private void SetAudioActivity(bool receiving)
+        {
+            if (this.labelAudioActivity.InvokeRequired)
+            {
+                this.labelAudioActivity.BeginInvoke(new Action(() => this.SetAudioActivityInternal(receiving)));
+            }
+            else
+            {
+                this.SetAudioActivityInternal(receiving);
+            }
+        }
+
+        private void SetAudioActivityInternal(bool receiving)
+        {
+            if (receiving)
+            {
+                this.timerAudioActivity.Stop();
+                this.labelAudioActivity.ForeColor = Color.LimeGreen;
+                this.labelAudioActivity.Text = GlobalResources.GetString("labelAudioActivity.Receiving");
+                this.timerAudioActivity.Start();
+            }
+            else
+            {
+                this.timerAudioActivity.Stop();
+                this.labelAudioActivity.ForeColor = Color.Gray;
+                this.labelAudioActivity.Text = GlobalResources.GetString("labelAudioActivity.Idle");
+            }
+        }
+
+        private void timerAudioActivity_Tick(object? sender, EventArgs e)
+        {
+            this.timerAudioActivity.Stop();
+            this.labelAudioActivity.ForeColor = Color.Gray;
+            this.labelAudioActivity.Text = GlobalResources.GetString("labelAudioActivity.Idle");
         }
 
         private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)

@@ -22,6 +22,10 @@
   <data name="buttonLogin.Text" xml:space="preserve"><value>Iniciar sesión en el navegador...</value></data>
   <data name="buttonStart.Text" xml:space="preserve"><value>Iniciar</value></data>
   <data name="buttonStop.Text" xml:space="preserve"><value>Detener</value></data>
+  <data name="labelTranscript.Text" xml:space="preserve"><value>Transcripción</value></data>
+  <data name="labelLog.Text" xml:space="preserve"><value>Registro</value></data>
+  <data name="labelAudioActivity.Idle" xml:space="preserve"><value>● Inactivo</value></data>
+  <data name="labelAudioActivity.Receiving" xml:space="preserve"><value>● Recibiendo audio</value></data>
   <data name="checkBoxPreprocess.Text" xml:space="preserve"><value>Preprocesar (reducción de ruido) [todavía no implementado]</value></data>
   <data name="checkBoxChunkOnSilence.Text" xml:space="preserve"><value>Dividir al detectar silencio</value></data>
   <data name="checkBoxFastMode.Text" xml:space="preserve"><value>Modo rápido [todavía no implementado]</value></data>

@@ -68,8 +68,16 @@ namespace WhisperWinForms
         private System.Windows.Forms.Button buttonSettings;
         private System.Windows.Forms.TextBox textBoxLog;
 
+        private System.Windows.Forms.SplitContainer splitContainerOutput;
+        private System.Windows.Forms.Label labelTranscript;
+        private System.Windows.Forms.Label labelLog;
+        private System.Windows.Forms.Label labelAudioActivity;
+        private System.Windows.Forms.TextBox textBoxTranscript;
+        private System.Windows.Forms.Timer timerAudioActivity;
+
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             tabControlMode = new TabControl();
             tabPageBatch = new TabPage();
             labelInputFolder = new Label();
@@ -114,12 +122,22 @@ namespace WhisperWinForms
             buttonStop = new Button();
             buttonSettings = new Button();
             textBoxLog = new TextBox();
+            splitContainerOutput = new SplitContainer();
+            labelTranscript = new Label();
+            labelAudioActivity = new Label();
+            textBoxTranscript = new TextBox();
+            labelLog = new Label();
+            timerAudioActivity = new System.Windows.Forms.Timer(components);
             tabControlMode.SuspendLayout();
             tabPageBatch.SuspendLayout();
             tabPageStream.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numericChunkMs).BeginInit();
             groupBoxCommon.SuspendLayout();
             groupBoxEngine.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainerOutput).BeginInit();
+            splitContainerOutput.Panel1.SuspendLayout();
+            splitContainerOutput.Panel2.SuspendLayout();
+            splitContainerOutput.SuspendLayout();
             SuspendLayout();
             // 
             // tabControlMode
@@ -554,15 +572,80 @@ namespace WhisperWinForms
             // 
             // textBoxLog
             // 
-            textBoxLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxLog.Dock = DockStyle.Fill;
             textBoxLog.Font = new Font("Consolas", 9F);
-            textBoxLog.Location = new Point(12, 485);
+            textBoxLog.Location = new Point(0, 20);
             textBoxLog.Multiline = true;
             textBoxLog.Name = "textBoxLog";
             textBoxLog.ReadOnly = true;
             textBoxLog.ScrollBars = ScrollBars.Vertical;
-            textBoxLog.Size = new Size(790, 187);
-            textBoxLog.TabIndex = 5;
+            textBoxLog.Size = new Size(390, 182);
+            textBoxLog.TabIndex = 1;
+            // 
+            // splitContainerOutput
+            // 
+            splitContainerOutput.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            splitContainerOutput.Location = new Point(12, 470);
+            splitContainerOutput.Name = "splitContainerOutput";
+            splitContainerOutput.Panel1.Controls.Add(textBoxTranscript);
+            splitContainerOutput.Panel1.Controls.Add(labelAudioActivity);
+            splitContainerOutput.Panel1.Controls.Add(labelTranscript);
+            splitContainerOutput.Panel2.Controls.Add(textBoxLog);
+            splitContainerOutput.Panel2.Controls.Add(labelLog);
+            splitContainerOutput.Size = new Size(790, 202);
+            splitContainerOutput.SplitterDistance = 392;
+            splitContainerOutput.TabIndex = 6;
+            // 
+            // labelTranscript
+            // 
+            labelTranscript.AutoSize = true;
+            labelTranscript.Dock = DockStyle.Top;
+            labelTranscript.Location = new Point(0, 0);
+            labelTranscript.Name = "labelTranscript";
+            labelTranscript.Padding = new Padding(0, 3, 0, 0);
+            labelTranscript.Size = new Size(69, 18);
+            labelTranscript.TabIndex = 0;
+            labelTranscript.Text = GlobalResources.GetString("labelTranscript.Text");
+            // 
+            // labelAudioActivity
+            // 
+            labelAudioActivity.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            labelAudioActivity.AutoSize = true;
+            labelAudioActivity.ForeColor = Color.Gray;
+            labelAudioActivity.Location = new Point(282, 3);
+            labelAudioActivity.Name = "labelAudioActivity";
+            labelAudioActivity.Size = new Size(108, 15);
+            labelAudioActivity.TabIndex = 1;
+            labelAudioActivity.Text = GlobalResources.GetString("labelAudioActivity.Idle");
+            labelAudioActivity.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // textBoxTranscript
+            // 
+            textBoxTranscript.Dock = DockStyle.Fill;
+            textBoxTranscript.Font = new Font("Consolas", 9F);
+            textBoxTranscript.Location = new Point(0, 20);
+            textBoxTranscript.Multiline = true;
+            textBoxTranscript.Name = "textBoxTranscript";
+            textBoxTranscript.ReadOnly = true;
+            textBoxTranscript.ScrollBars = ScrollBars.Vertical;
+            textBoxTranscript.Size = new Size(392, 182);
+            textBoxTranscript.TabIndex = 2;
+            // 
+            // labelLog
+            // 
+            labelLog.AutoSize = true;
+            labelLog.Dock = DockStyle.Top;
+            labelLog.Location = new Point(0, 0);
+            labelLog.Name = "labelLog";
+            labelLog.Padding = new Padding(0, 3, 0, 0);
+            labelLog.Size = new Size(31, 18);
+            labelLog.TabIndex = 0;
+            labelLog.Text = GlobalResources.GetString("labelLog.Text");
+            // 
+            // timerAudioActivity
+            // 
+            timerAudioActivity.Interval = 800;
+            timerAudioActivity.Tick += timerAudioActivity_Tick;
             // 
             // MainForm
             // 
@@ -575,7 +658,7 @@ namespace WhisperWinForms
             Controls.Add(buttonStart);
             Controls.Add(buttonStop);
             Controls.Add(buttonSettings);
-            Controls.Add(textBoxLog);
+            Controls.Add(splitContainerOutput);
             MinimumSize = new Size(700, 500);
             Name = "MainForm";
             Text = GlobalResources.GetString("titleMainForm");
@@ -589,6 +672,12 @@ namespace WhisperWinForms
             groupBoxCommon.PerformLayout();
             groupBoxEngine.ResumeLayout(false);
             groupBoxEngine.PerformLayout();
+            splitContainerOutput.Panel1.ResumeLayout(false);
+            splitContainerOutput.Panel1.PerformLayout();
+            splitContainerOutput.Panel2.ResumeLayout(false);
+            splitContainerOutput.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainerOutput).EndInit();
+            splitContainerOutput.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }

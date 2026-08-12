@@ -7,7 +7,7 @@ namespace WhisperWinForms.Services
     /// <summary>Native (Whisper.net + FFmpeg) replacement for the Python transcription worker.</summary>
     public sealed class NativeTranscriptionService
     {
-        public async Task RunBatchAsync(TranscriptionOptions options, BatchOptions batch, IProgress<string> log, CancellationToken cancellationToken)
+        public async Task RunBatchAsync(TranscriptionOptions options, BatchOptions batch, IProgress<string> log, IProgress<string> transcript, CancellationToken cancellationToken)
         {
             string modelPath = await GgmlModelManager.EnsureModelAsync(options.ModelName, options.ModelsDirectory, log);
             using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu);
@@ -66,17 +66,20 @@ namespace WhisperWinForms.Services
 
                     List<TranscribedSegment> mergedSegments = [];
                     int chunkIndex = 0;
+                    log.Report("  Transcribing (this can take a while for long files)...");
                     foreach ((string chunkFile, double offsetSec) in chunks)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         chunkIndex++;
                         await foreach (SegmentData segment in processor.ProcessAsync(File.OpenRead(chunkFile), cancellationToken))
                         {
+                            double segmentStart = segment.Start.TotalSeconds + offsetSec;
                             mergedSegments.Add(new TranscribedSegment(
-                                segment.Start.TotalSeconds + offsetSec,
+                                segmentStart,
                                 segment.End.TotalSeconds + offsetSec,
                                 segment.Text.Trim(),
                                 segment.Probability));
+                            transcript.Report($"[{TranscriptFilter.FormatTimestamp(TimeSpan.FromSeconds(segmentStart))}] {segment.Text.Trim()}");
                         }
                         log.Report($"Chunk progress: {chunkIndex}/{chunks.Count}");
                     }
@@ -96,7 +99,7 @@ namespace WhisperWinForms.Services
             log.Report("\nAll files transcribed.");
         }
 
-        public async Task RunStreamAsync(TranscriptionOptions options, StreamOptions stream, IProgress<string> log, CancellationToken cancellationToken)
+        public async Task RunStreamAsync(TranscriptionOptions options, StreamOptions stream, IProgress<string> log, IProgress<string> transcript, IProgress<bool> audioActivity, CancellationToken cancellationToken)
         {
             string modelPath = await GgmlModelManager.EnsureModelAsync(options.ModelName, options.ModelsDirectory, log);
             using WhisperFactory factory = GgmlModelManager.CreateFactory(modelPath, options.UseGpu);
@@ -119,11 +122,7 @@ namespace WhisperWinForms.Services
             bool isPlaylist = stream.Url.Contains(".m3u", StringComparison.OrdinalIgnoreCase);
             try
             {
-                if (Uri.TryCreate(stream.Url, UriKind.Absolute, out Uri? streamUri))
-                {
-                    string safeUrl = streamUri.GetLeftPart(UriPartial.Path);
-                    log.Report($"Requesting playlist: {safeUrl}");
-                }
+                log.Report($"Stream URL: {stream.Url}");
                 log.Report($"Referer: {stream.RefererUrl ?? "derived from stream URL"}; User-Agent: {(string.IsNullOrWhiteSpace(stream.UserAgent) ? "default browser profile" : "custom browser profile")}");
                 Task? refreshTask = null;
                 CancellationTokenSource? refreshCts = null;
@@ -135,7 +134,7 @@ namespace WhisperWinForms.Services
                     manifestPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.m3u8");
                     refreshCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     manifestClient = new(cookies, stream.RefererUrl, stream.UserAgent);
-                    refreshInterval = await manifestClient.RefreshManifestAsync(stream.Url, manifestPath, cancellationToken);
+                    refreshInterval = await manifestClient.RefreshManifestAsync(stream.Url, manifestPath, log, cancellationToken);
                 }
 
                 using Process ffmpegProcess = StartFfmpegDecoder(stream.Url, isPlaylist, cookies, stream.RefererUrl, stream.UserAgent, manifestPath, out manifestPath);
@@ -150,12 +149,21 @@ namespace WhisperWinForms.Services
                 int filled = 0;
                 string lastNorm = string.Empty;
                 List<string> recentNorms = [];
+                long totalBytesReceived = 0;
+                bool loggedFirstBytes = false;
 
                 Stream ffmpegOutput = ffmpegProcess.StandardOutput.BaseStream;
                 byte[] readBuffer = new byte[8192];
                 int bytesRead;
                 while ((bytesRead = await ffmpegOutput.ReadAsync(readBuffer, cancellationToken)) > 0)
                 {
+                    totalBytesReceived += bytesRead;
+                    if (!loggedFirstBytes)
+                    {
+                        log.Report("Receiving audio data from stream...");
+                        loggedFirstBytes = true;
+                    }
+
                     int offset = 0;
                     while (offset < bytesRead)
                     {
@@ -166,14 +174,20 @@ namespace WhisperWinForms.Services
 
                         if (filled >= pcmBuffer.Length)
                         {
-                            await TranscribeStreamChunkAsync(processor, pcmBuffer, recentNorms, log, outputWriter, cancellationToken);
+                            await TranscribeStreamChunkAsync(processor, pcmBuffer, recentNorms, transcript, outputWriter, cancellationToken);
                             filled = 0;
                         }
                     }
+
+                    audioActivity.Report(true);
                 }
 
                 string ffmpegError = await ffmpegProcess.StandardError.ReadToEndAsync(cancellationToken);
                 await ffmpegProcess.WaitForExitAsync(cancellationToken);
+                if (!loggedFirstBytes)
+                {
+                    log.Report("Warning: no audio data was received from the stream (ffmpeg produced no output).");
+                }
                 if (ffmpegProcess.ExitCode != 0)
                 {
                     string detail = ffmpegError.Trim();
@@ -187,8 +201,10 @@ namespace WhisperWinForms.Services
                 if (filled > 0)
                 {
                     byte[] remaining = pcmBuffer[..filled];
-                    await TranscribeStreamChunkAsync(processor, remaining, recentNorms, log, outputWriter, cancellationToken);
+                    await TranscribeStreamChunkAsync(processor, remaining, recentNorms, transcript, outputWriter, cancellationToken);
                 }
+
+                audioActivity.Report(false);
 
                 refreshCts?.Cancel();
                 if (refreshTask != null)
@@ -222,7 +238,7 @@ namespace WhisperWinForms.Services
         }
 
         private static async Task TranscribeStreamChunkAsync(
-            WhisperProcessor processor, byte[] pcmData, List<string> recentNorms, IProgress<string> log,
+            WhisperProcessor processor, byte[] pcmData, List<string> recentNorms, IProgress<string> transcript,
             StreamWriter? outputWriter, CancellationToken cancellationToken)
         {
             using MemoryStream wavStream = WavUtils.CreatePcm16WavStream(pcmData);
@@ -250,7 +266,7 @@ namespace WhisperWinForms.Services
                 }
 
                 string line = $"[{TranscriptFilter.FormatTimestamp(segment.Start)}] {text}";
-                log.Report(line);
+                transcript.Report(line);
                 if (outputWriter != null)
                 {
                     await outputWriter.WriteLineAsync(line);
@@ -268,7 +284,7 @@ namespace WhisperWinForms.Services
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(interval), cancellationToken);
-                    interval = await client.RefreshManifestAsync(url, manifestPath, cancellationToken);
+                    interval = await client.RefreshManifestAsync(url, manifestPath, log, cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {

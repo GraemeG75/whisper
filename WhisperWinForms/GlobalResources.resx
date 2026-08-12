@@ -22,6 +22,10 @@
   <data name="buttonLogin.Text" xml:space="preserve"><value>Login in browser...</value></data>
   <data name="buttonStart.Text" xml:space="preserve"><value>Start</value></data>
   <data name="buttonStop.Text" xml:space="preserve"><value>Stop</value></data>
+  <data name="labelTranscript.Text" xml:space="preserve"><value>Transcript</value></data>
+  <data name="labelLog.Text" xml:space="preserve"><value>Log</value></data>
+  <data name="labelAudioActivity.Idle" xml:space="preserve"><value>● Idle</value></data>
+  <data name="labelAudioActivity.Receiving" xml:space="preserve"><value>● Receiving audio</value></data>
   <data name="checkBoxPreprocess.Text" xml:space="preserve"><value>Preprocess (noise reduction) [not yet implemented]</value></data>
   <data name="checkBoxChunkOnSilence.Text" xml:space="preserve"><value>Chunk on silence</value></data>
   <data name="checkBoxFastMode.Text" xml:space="preserve"><value>Fast mode [not yet implemented]</value></data>
